@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  DatabaseSecurityGroupIngressCIDR:
+    Type: String
+    Default: "0.0.0.0/0"  # Adjust this to the specific CIDR range for your use case
+
+Resources:
+  DatabaseInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+      InstanceType: t2.micro  # Adjust as needed
+      KeyName: YourKeyPair  # Provide your EC2 key pair
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install postgresql12 -y
+          systemctl enable postgresql
+          systemctl start postgresql
+      SecurityGroupIds:
+        - !Ref DatabaseSecurityGroup
+      IamInstanceProfile: !Ref DatabaseInstanceProfile
+
+  DatabaseSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the PostgreSQL database
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref DatabaseSecurityGroupIngressCIDR
+
+  DatabaseInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref DatabaseIAMRole
+
+  DatabaseIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: StandardPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: # Add standard permissions here
+
+  ReverseProxyInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+      InstanceType: t2.micro  # Adjust as needed
+      KeyName: YourKeyPair  # Provide your EC2 key pair
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install nginx1 -y
+          systemctl enable nginx
+          systemctl start nginx
+          # Additional configuration for Nginx reverse proxy
+      SecurityGroupIds:
+        - !Ref ReverseProxySecurityGroup
+      IamInstanceProfile: !Ref ReverseProxyInstanceProfile
+
+  ReverseProxySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the Nginx reverse proxy
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0  # Adjust as needed
+
+  ReverseProxyInstanceProfile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref ReverseProxyIAMRole
+
+  ReverseProxyIAMRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: NecessaryPermissions
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: # Add necessary permissions here
+
+  ContainerAppSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the containerized web application
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ReverseProxySecurityGroup
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          DestinationSecurityGroupId: !Ref ReverseProxySecurityGroup
+        - IpProtocol: -1
+          DestinationSecurityGroupId: !Ref DatabaseSecurityGroup

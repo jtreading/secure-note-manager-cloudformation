@@ -1,0 +1,59 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  IngressCIDR:
+    Type: String
+    Description: The CIDR range for SSH & PostgreSQL access.
+    Default: 0.0.0.0/0
+
+  KeypairName:
+    Type: String
+    Description: The name of the EC2 key pair to associate with the instance.
+    Default: SNMKeypair
+
+  AMI:
+    Type: String
+    Description: The AMI to use for the instance.
+    Default: ami-058bd2d568351da34
+
+Resources:
+  DatabaseInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t2.micro
+      KeyName: !Ref KeypairName
+      SecurityGroups:
+        - !Ref DatabaseSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          # Install and configure PostgreSQL
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
+          sudo apt-get update
+          sudo apt-get -y install postgresql
+
+          PG_HBA_CONF="/etc/postgresql/15/main/pg_hba.conf"
+          echo "host    all             all             ${IngressCIDR}               md5" | sudo tee -a $PG_HBA_CONF
+
+          PGSQL_CONF="/etc/postgresql/15/main/postgresql.conf"
+          echo "listen_addresses = '*'" | sudo tee -a $PGSQL_CONF
+
+          sudo -u postgres psql -c "CREATE USER webuser WITH PASSWORD 'CHANGEME';"
+          sudo -u postgres psql -c "CREATE DATABASE test OWNER webuser;"
+          sudo systemctl restart postgresql
+
+  DatabaseSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the PostgreSQL database
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref IngressCIDR
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          CidrIp: !Ref IngressCIDR

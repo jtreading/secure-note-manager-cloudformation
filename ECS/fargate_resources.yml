@@ -26,6 +26,11 @@ Resources:
     Properties:
       ClusterName: !Sub '${AppName}Cluster'
 
+  LogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      LogGroupName: !Sub '/ecs/${AppName}-log-group'
+
   ECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
@@ -47,7 +52,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: /ecs/fargate-task-definition
+              awslogs-group: !Ref LogGroup
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
           Name: !Sub '${AppName}Task'

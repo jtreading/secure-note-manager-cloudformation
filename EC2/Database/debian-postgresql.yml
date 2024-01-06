@@ -41,7 +41,8 @@ Resources:
           echo "listen_addresses = '*'" | sudo tee -a $PGSQL_CONF
 
           sudo -u postgres psql -c "CREATE USER webuser WITH PASSWORD 'CHANGEME';"
-          sudo -u postgres psql -c "CREATE DATABASE test OWNER webuser;"
+          sudo -u postgres psql -c "CREATE DATABASE Note OWNER webuser;"
+          sudo -u postgres psql -c "ALTER ROLE webuser CREATEDB;"
           sudo systemctl restart postgresql
 
   DatabaseSecurityGroup:

@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  IngressCIDR:
+    Type: String
+    Description: The CIDR range allowed to access the cluster. Replace with reverse proxy server IP range.
+    Default: 0.0.0.0/0
+  AccountId:
+    Type: String
+    Description: Amazon account ID, used for locating default execution roles.
+    Default: aws_account_id
+  AppName:
+    Type: String
+    Description: Used to name the ECS cluster and ECR.
+    Default: CFNCluster
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the ECS cluster will be deployed.
+  SubnetCIDR:
+    Type: String
+    Description: CIDR block for the subnet where the ECS cluster will be deployed.
+    Default: 172.31.96.0/24
+
+Resources:
+  ECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: !Sub '${AppName}Cluster'
+
+  ECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - >-
+              /bin/sh -c "echo '<html> <head> <title>Amazon ECS Sample
+              App</title> <style>body {margin-top: 40px; background-color:
+              #333;} </style> </head><body> <div
+              style=color:white;text-align:center> <h1>Amazon ECS Sample
+              App</h1> <h2>Congratulations!</h2> <p>Your application is now
+              running on a container in Amazon ECS.</p> </div></body></html>' > 
+              /usr/local/apache2/htdocs/index.html && httpd-foreground"
+          EntryPoint:
+            - sh
+            - '-c'
+          Essential: true
+          Image: 'httpd:2.4'
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: /ecs/fargate-task-definition
+              awslogs-region: us-east-1
+              awslogs-stream-prefix: ecs
+          Name: !Sub '${AppName}Task'
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+              Protocol: tcp
+      Cpu: 256
+      ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
+      Family: task-definition-cfn
+      Memory: 512
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+
+  ECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: !Sub '${AppName}Service'
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          Subnets:
+            - !Ref ClusterSubnet
+      TaskDefinition: !Ref ECSTaskDefinition
+
+  ClusterSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the cluster
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 3000
+          CidrIp: !Ref IngressCIDR
+
+  ClusterSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref VPCId
+      CidrBlock: !Ref SubnetCIDR
+      AvailabilityZone: us-east-1a
+
+  ECRRepository:
+    Type: 'AWS::ECR::Repository'
+    Properties:
+      RepositoryName: !Sub '${AppName}-repo'

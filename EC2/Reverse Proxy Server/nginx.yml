@@ -1,0 +1,45 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  IngressCIDR:
+    Type: String
+    Description: The CIDR range for inbound access.
+    Default: 0.0.0.0/0
+
+  KeypairName:
+    Type: String
+    Description: The name of the EC2 key pair to associate with the instance.
+    Default: SNMKeypair
+
+  AMI:
+    Type: String
+    Description: The AMI to use for the instance.
+    Default: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+
+Resources:
+  ReverseProxyInstance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      ImageId: !Ref AMI
+      InstanceType: t2.micro
+      KeyName: !Ref KeypairName
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          amazon-linux-extras install nginx1 -y
+          systemctl enable nginx
+          systemctl start nginx
+          # Additional configuration for Nginx reverse proxy
+      SecurityGroupIds:
+        - !Ref ReverseProxySecurityGroup
+
+  ReverseProxySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the Nginx reverse proxy
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref IngressCIDR

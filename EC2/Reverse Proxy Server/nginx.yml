@@ -3,7 +3,12 @@ AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   IngressCIDR:
     Type: String
-    Description: The CIDR range for inbound access.
+    Description: The CIDR range for inbound access. (Point to the Internet.)
+    Default: 0.0.0.0/0
+
+  EngressCIDR:
+    Type: String
+    Description: The CIDR range for outbound access. (Point to ECS cluster.)
     Default: 0.0.0.0/0
 
   KeypairName:
@@ -14,7 +19,7 @@ Parameters:
   AMI:
     Type: String
     Description: The AMI to use for the instance.
-    Default: !Sub '{{resolve:ssm:/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2}}'
+    Default: ami-058bd2d568351da34
 
 Resources:
   ReverseProxyInstance:
@@ -23,16 +28,57 @@ Resources:
       ImageId: !Ref AMI
       InstanceType: t2.micro
       KeyName: !Ref KeypairName
+      SecurityGroupIds:
+        - !Ref ReverseProxySecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
-          yum update -y
-          amazon-linux-extras install nginx1 -y
-          systemctl enable nginx
-          systemctl start nginx
-          # Additional configuration for Nginx reverse proxy
-      SecurityGroupIds:
-        - !Ref ReverseProxySecurityGroup
+          # Update and install Nginx
+          sudo apt-get update
+          sudo apt-get install -y nginx
+
+          # Display Nginx version
+          sudo nginx -v
+
+          # Create reverse_proxy configuration file
+          echo 'server {
+              listen 80;
+              server_name 3.87.247.171;
+
+              location / {
+                  proxy_pass http://3.87.247.171:80;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }' | sudo tee /etc/nginx/sites-available/reverse_proxy.conf
+
+          # Create a symbolic link to enable the reverse_proxy configuration
+          sudo ln -s /etc/nginx/sites-available/reverse_proxy.conf /etc/nginx/sites-enabled/
+
+          # Disable the default configuration
+          sudo rm /etc/nginx/sites-enabled/default
+
+          # Create a nodeapp configuration in conf.d
+          echo 'server {
+              listen 80;
+              server_name 3.87.247.171;
+
+              location / {
+                  proxy_pass http://3.87.247.171:80;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }' | sudo tee /etc/nginx/conf.d/nodeapp.conf
+
+          # Reload Nginx to apply changes
+          sudo nginx -s reload
+
+          # Display status after setup
+          sudo systemctl status nginx.service
 
   ReverseProxySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -42,4 +88,8 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
+          CidrIp: !Ref IngressCIDR
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
           CidrIp: !Ref IngressCIDR

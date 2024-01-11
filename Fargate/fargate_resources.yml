@@ -10,7 +10,7 @@ Parameters:
     Default: aws_account_id
   AppName:
     Type: String
-    Description: Used to name the ECS cluster and ECR.
+    Description: Used to name the ECS cluster.
     Default: CFNCluster
   VPCId:
     Type: AWS::EC2::VPC::Id
@@ -19,6 +19,10 @@ Parameters:
     Type: String
     Description: CIDR block for the subnet where the ECS cluster will be deployed.
     Default: 172.31.96.0/24
+  ImageLocation:
+    Type: String
+    Description: The location of the Docker image to use in ECS.
+    Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
 
 Resources:
   ECSCluster:
@@ -36,19 +40,10 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Command:
-            - >-
-              /bin/sh -c "echo '<html> <head> <title>Amazon ECS Sample
-              App</title> <style>body {margin-top: 40px; background-color:
-              #333;} </style> </head><body> <div
-              style=color:white;text-align:center> <h1>Amazon ECS Sample
-              App</h1> <h2>Congratulations!</h2> <p>Your application is now
-              running on a container in Amazon ECS.</p> </div></body></html>' > 
-              /usr/local/apache2/htdocs/index.html && httpd-foreground"
-          EntryPoint:
-            - sh
-            - '-c'
+            - npm
+            - start
           Essential: true
-          Image: 'httpd:2.4'
+          Image: !Ref ImageLocation
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -57,8 +52,8 @@ Resources:
               awslogs-stream-prefix: ecs
           Name: !Sub '${AppName}Task'
           PortMappings:
-            - ContainerPort: 80
-              HostPort: 80
+            - ContainerPort: 3000
+              HostPort: 3000
               Protocol: tcp
       Cpu: 256
       ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
@@ -92,9 +87,13 @@ Resources:
       GroupDescription: Security group for the cluster
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 443
+          FromPort: 3000
           ToPort: 3000
           CidrIp: !Ref IngressCIDR
+        # - IpProtocol: tcp
+        #   FromPort: 2375
+        #   ToPort: 2375
+        #   CidrIp: !Ref IngressCIDR
 
   ClusterSubnet:
     Type: 'AWS::EC2::Subnet'
@@ -102,8 +101,3 @@ Resources:
       VpcId: !Ref VPCId
       CidrBlock: !Ref SubnetCIDR
       AvailabilityZone: us-east-1a
-
-  ECRRepository:
-    Type: 'AWS::ECR::Repository'
-    Properties:
-      RepositoryName: !Sub '${AppName}-repo'

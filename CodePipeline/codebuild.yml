@@ -1,0 +1,54 @@
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: MyCodeBuildProject
+      Description: CodeBuild project for building Docker image and running tests
+      ServiceRole: !Ref CodeBuildServiceRole
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:5.0
+        EnvironmentVariables:
+          - Name: GITHUB_REPO
+            Value: my-github-repo
+          - Name: DOCKER_IMAGE_NAME
+            Value: my-docker-image
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubRepo
+        BuildSpec: |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 19
+            pre_build:
+              commands:
+                - echo Logging in to Docker Hub...
+                - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+            build:
+              commands:
+                - echo Building Docker image...
+                - docker build -t $DOCKER_IMAGE_NAME .
+            post_build:
+              commands:
+                - echo Running tests...
+                - docker run $DOCKER_IMAGE_NAME npm test
+      TimeoutInMinutes: 60
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess

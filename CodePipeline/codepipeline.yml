@@ -1,25 +1,34 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  RepositoryName:
+  AppName:
     Type: String
-    Description: Name of the ECR repository
-    Default: YourECRRepository
+    Description: Used to name the ECS cluster and ECR.
+    Default: CFNCluster
+  SourceRepository:
+    Type: String
+    Description: Repository to build docker image from.
+    Default: YourRepositoryURL
 
 Resources:
   ECRRepository:
     Type: 'AWS::ECR::Repository'
     Properties:
-      RepositoryName: !Ref RepositoryName
+      RepositoryName: !Sub '${AppName}Repository'
+
+  S3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AppName}Bucket'
 
   CodePipeline:
     Type: 'AWS::CodePipeline::Pipeline'
     Properties:
-      Name: YourCodePipeline
+      Name: !Sub '${AppName}Pipeline'
       RoleArn: !GetAtt CodePipelineRole.Arn
       ArtifactStore:
         Type: S3
-        Location: YourS3Bucket
+        Location: !Ref S3Bucket
       Stages:
         - Name: Source
           Actions:
@@ -28,10 +37,12 @@ Resources:
                 Category: Source
                 Owner: AWS
                 Version: '1'
-                Provider: CodeCommit  # Update if using a different source provider
+                Provider: GitHub
               Configuration:
-                RepositoryName: YourCodeCommitRepository
-                BranchName: YourBranch
+                Owner: YourGitHubOwner
+                Repo: YourGitHubRepo
+                Branch: YourGitHubBranch
+                OAuthToken: YourGitHubOAuthToken
               OutputArtifacts:
                 - Name: SourceOutput
         - Name: Build

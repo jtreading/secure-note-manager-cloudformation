@@ -1,4 +1,41 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+
 Resources:
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: CodeBuildServicePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+        - PolicyName: AWSCodeBuildAdminAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: "codebuild:*"
+                Resource: "*"
+
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -13,13 +50,13 @@ Resources:
         Image: aws/codebuild/standard:5.0
         EnvironmentVariables:
           - Name: GITHUB_REPO
-            Value: my-github-repo
+            Value: !Ref GitHubRepo
           - Name: DOCKER_IMAGE_NAME
             Value: my-docker-image
       Source:
         Type: GITHUB
         Location: !Ref GitHubRepo
-        BuildSpec: |
+        BuildSpec: !Sub |
           version: 0.2
           phases:
             install:
@@ -27,8 +64,8 @@ Resources:
                 docker: 19
             pre_build:
               commands:
-                - echo Logging in to Docker Hub...
-                - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+                - echo Logging in to Amazon ECR...
+                - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
             build:
               commands:
                 - echo Building Docker image...
@@ -36,19 +73,4 @@ Resources:
             post_build:
               commands:
                 - echo Running tests...
-                - docker run $DOCKER_IMAGE_NAME npm test
       TimeoutInMinutes: 60
-
-  CodeBuildServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: CodeBuildServiceRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: codebuild.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess

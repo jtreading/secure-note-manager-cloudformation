@@ -40,8 +40,8 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Command:
-            - npm
-            - start
+            - "/bin/sh"
+            - "./start.sh"
           Essential: true
           Image: !Ref ImageLocation
           LogConfiguration:

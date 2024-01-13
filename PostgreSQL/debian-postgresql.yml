@@ -43,13 +43,9 @@ Resources:
           sudo -u postgres psql -c "CREATE USER webuser WITH PASSWORD 'CHANGEME';"
           sudo -u postgres psql -c "CREATE DATABASE Note OWNER webuser;"
           sudo -u postgres psql -c "ALTER ROLE webuser CREATEDB;"
+          sudo -u postgres psql -d Note -c "CREATE TABLE Note (id SERIAL PRIMARY KEY, title TEXT, content TEXT);"
           sudo systemctl restart postgresql
-      Tags:
-        - Key: ProjectName
-          Value: SecureNotesManager
-        - Key: ENV
-          Value: DEV
-
+      
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:

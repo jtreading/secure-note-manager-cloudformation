@@ -16,6 +16,16 @@ Parameters:
     Description: The AMI to use for the instance.
     Default: ami-058bd2d568351da34
 
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: DEV
+
 Resources:
   DatabaseInstance:
     Type: 'AWS::EC2::Instance'
@@ -45,7 +55,12 @@ Resources:
           sudo -u postgres psql -c "ALTER ROLE webuser CREATEDB;"
           sudo -u postgres psql -d Note -c "CREATE TABLE Note (id SERIAL PRIMARY KEY, title TEXT, content TEXT);"
           sudo systemctl restart postgresql
-      
+      Tags:
+        - Key: ProjectName
+          Value: SecureNotesManager
+        - Key: ENV
+          Value: DEV
+
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -59,3 +74,8 @@ Resources:
           FromPort: 5432
           ToPort: 5432
           CidrIp: !Ref IngressCIDR
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment

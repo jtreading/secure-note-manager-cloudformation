@@ -57,9 +57,9 @@ Resources:
           sudo systemctl restart postgresql
       Tags:
         - Key: ProjectName
-          Value: SecureNotesManager
-        - Key: ENV
-          Value: DEV
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'

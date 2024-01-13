@@ -23,6 +23,10 @@ Parameters:
     Type: String
     Description: The location of the Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  DatabaseURL:
+    Type: String
+    Description: The URL of the database to use in the application.
+    Default: postgresql://username:password@ipadress:5432/tablename?schema=public
 
 Resources:
   ECSCluster:
@@ -43,6 +47,9 @@ Resources:
             - "/bin/sh"
             - "./start.sh"
           Essential: true
+          Environment:
+            - name: DATABASE_URL
+              value: !Ref DatabaseURL
           Image: !Ref ImageLocation
           LogConfiguration:
             LogDriver: awslogs
@@ -55,10 +62,10 @@ Resources:
             - ContainerPort: 3000
               HostPort: 3000
               Protocol: tcp
-      Cpu: 256
+      Cpu: 1024
       ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
       Family: task-definition-cfn
-      Memory: 512
+      Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -90,10 +97,6 @@ Resources:
           FromPort: 3000
           ToPort: 3000
           CidrIp: !Ref IngressCIDR
-        # - IpProtocol: tcp
-        #   FromPort: 2375
-        #   ToPort: 2375
-        #   CidrIp: !Ref IngressCIDR
 
   ClusterSubnet:
     Type: 'AWS::EC2::Subnet'

@@ -23,16 +23,16 @@ Parameters:
     Type: String
     Description: The location of the Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
-  DatabaseURL:
+  Environment:
     Type: String
-    Description: The URL of the database to use in the application.
-    Default: postgresql://username:password@ipadress:5432/tablename?schema=public
+    Description: Environment name.
+    Default: Development
 
 Resources:
   ECSCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
-      ClusterName: !Sub '${AppName}Cluster'
+      ClusterName: !Sub '${AppName}-cluster'
 
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -47,21 +47,17 @@ Resources:
             - "/bin/sh"
             - "./start.sh"
           Essential: true
-          Environment:
-            - name: DATABASE_URL
-              value: !Ref DatabaseURL
           Image: !Ref ImageLocation
+          EnvironmentFiles:
+            - !Sub '{{resolve:ssm-secure:/snm/${Environment}/database_url}}'
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref LogGroup
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
-          Name: !Sub '${AppName}Task'
+          Name: !Sub '${AppName}-task'
           PortMappings:
-            - ContainerPort: 3000
-              HostPort: 3000
-              Protocol: tcp
             - ContainerPort: 5000
               HostPort: 5000
               Protocol: tcp
@@ -78,7 +74,7 @@ Resources:
   ECSService:
     Type: 'AWS::ECS::Service'
     Properties:
-      ServiceName: !Sub '${AppName}Service'
+      ServiceName: !Sub '${AppName}-service'
       Cluster: !Ref ECSCluster
       DesiredCount: 1
       LaunchType: FARGATE

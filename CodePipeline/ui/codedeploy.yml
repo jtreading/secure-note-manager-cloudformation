@@ -1,0 +1,53 @@
+Resources:
+  MyEcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: MyCluster
+
+  MyTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: MyTaskDefinition
+      ContainerDefinitions:
+        - Name: MyContainer
+          Image: my-docker-image:latest
+          PortMappings:
+            - ContainerPort: 80
+              HostPort: 80
+
+  MyService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref MyEcsCluster
+      TaskDefinition: !Ref MyTaskDefinition
+      DesiredCount: 1
+
+  MyApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: MyApplication
+
+  MyDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref MyApplication
+      DeploymentGroupName: MyDeploymentGroup
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      ServiceRoleArn: arn:aws:iam::123456789012:role/CodeDeployServiceRole
+      AutoRollbackConfiguration:
+        Enabled: true
+        Events:
+          - DEPLOYMENT_FAILURE
+          - DEPLOYMENT_STOP_ON_ALARM
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+        GreenFleetProvisioningOption:
+          Action: COPY_AUTO_SCALING_GROUP
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+        DeploymentSuccessOption:
+          Action: STOP_DEPLOYMENT

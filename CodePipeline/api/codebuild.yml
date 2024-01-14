@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+  AWSRegion:
+    Type: String
+    Description: AWS region for Amazon ECR
+  AWSAccountId:
+    Type: String
+    Description: AWS account ID
+  AppName:
+    Type: String
+    Description: Used to name ECR and CodeBuild project.
+    Default: CFNCluster
+  DockerHubUsername:
+    Type: String
+    Description: Docker Hub username
+  DockerHubPassword:
+    Type: String
+    Description: Docker Hub password
+
+Resources:
+  CodeBuildServiceRole2:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CodeBuildServiceRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
+      Policies:
+        - PolicyName: CodeBuildServicePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+
+  ECRRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Ref AppName
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${AppName}-codebuild-project"
+      Description: CodeBuild project for building Docker image and running tests
+      ServiceRole: !Ref CodeBuildServiceRole2
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
+        EnvironmentVariables:
+          - Name: GITHUB_REPO
+            Value: !Ref GitHubRepo
+          - Name: DOCKER_IMAGE_NAME
+            Value: !Ref AppName
+          - Name: AWS_REGION
+            Value: !Ref AWSRegion
+          - Name: AWS_ACCOUNT_ID
+            Value: !Ref AWSAccountId
+          - Name: ECR_REPOSITORY
+            Value: !Ref ECRRepository
+          - Name: DOCKERHUB_USERNAME
+            Value: !Ref DockerHubUsername
+          - Name: DOCKERHUB_PASSWORD
+            Value: !Ref DockerHubPassword
+      Source:
+        Type: GITHUB
+        Location: !Ref GitHubRepo
+        BuildSpec: !Sub |
+          version: 0.2
+          phases:
+            install:
+              runtime-versions:
+                docker: 20
+              commands:
+                - echo Setting up environment variables...
+                - export AWS_REGION=$AWS_REGION
+                - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
+                - export ECR_REPOSITORY=$ECR_REPOSITORY
+                - export DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME
+                - export DOCKERHUB_PASSWORD=$DOCKERHUB_PASSWORD
+            pre_build:
+              commands:
+                - echo Logging in to Docker Hub...
+                - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
+              finally:
+                - echo Cleanup environment variables...
+                - unset AWS_REGION AWS_ACCOUNT_ID ECR_REPOSITORY DOCKERHUB_USERNAME DOCKERHUB_PASSWORD
+            build:
+              commands:
+                - echo Building Docker image...
+                - docker build -t $DOCKER_IMAGE_NAME .
+            post_build:
+              commands:
+                - echo Pushing Docker image to Amazon ECR...
+                - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+                - docker tag $DOCKER_IMAGE_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+                - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+      TimeoutInMinutes: 60

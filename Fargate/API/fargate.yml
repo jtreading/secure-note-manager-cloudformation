@@ -18,11 +18,19 @@ Parameters:
   SubnetCIDR:
     Type: String
     Description: CIDR block for the subnet where the ECS cluster will be deployed.
-    Default: 172.31.96.0/24
+    Default: 172.31.112.0/20
   ImageLocation:
     Type: String
     Description: The location of the Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  DatabaseUrl:
+    Type: String
+    Description: The URL of the database to use in the application.
+    Default: postgresql://username:password@localhost:5432/databasename?schema=public
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
   Environment:
     Type: String
     Description: Environment name.
@@ -48,8 +56,9 @@ Resources:
             - "./start.sh"
           Essential: true
           Image: !Ref ImageLocation
-          EnvironmentFiles:
-            - !Sub '{{resolve:ssm-secure:/snm/${Environment}/database_url}}'
+          Environment:
+            - Name: DATABASE_URL
+              Value: !Ref DatabaseUrl
           LogConfiguration:
             LogDriver: awslogs
             Options:

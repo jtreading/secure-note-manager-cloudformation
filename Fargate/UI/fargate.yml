@@ -32,7 +32,7 @@ Resources:
   ECSCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
-      ClusterName: !Sub '${AppName}Cluster'
+      ClusterName: !Sub '${AppName}-cluster'
 
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
@@ -48,8 +48,8 @@ Resources:
             - "./start.sh"
           Essential: true
           Environment:
-            - name: API_URL
-              value: !Ref APIURL
+            - Name: API_URL
+              Value: !Ref APIURL
           Image: !Ref ImageLocation
           LogConfiguration:
             LogDriver: awslogs
@@ -57,7 +57,7 @@ Resources:
               awslogs-group: !Ref LogGroup
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
-          Name: !Sub '${AppName}Task'
+          Name: !Sub '${AppName}-task'
           PortMappings:
             - ContainerPort: 3000
               HostPort: 3000
@@ -75,7 +75,7 @@ Resources:
   ECSService:
     Type: 'AWS::ECS::Service'
     Properties:
-      ServiceName: !Sub '${AppName}Service'
+      ServiceName: !Sub '${AppName}-service'
       Cluster: !Ref ECSCluster
       DesiredCount: 1
       LaunchType: FARGATE

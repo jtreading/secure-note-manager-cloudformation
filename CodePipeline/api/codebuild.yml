@@ -22,7 +22,7 @@ Parameters:
     Description: Docker Hub password
 
 Resources:
-  CodeBuildServiceRole2:
+  CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
       RoleName: CodeBuildServiceRole
@@ -58,7 +58,7 @@ Resources:
     Properties:
       Name: !Sub "${AppName}-codebuild-project"
       Description: CodeBuild project for building Docker image and running tests
-      ServiceRole: !Ref CodeBuildServiceRole2
+      ServiceRole: !Ref CodeBuildServiceRole
       Artifacts:
         Type: NO_ARTIFACTS
       Environment:

@@ -53,6 +53,7 @@ Resources:
           sudo -u postgres psql -c "CREATE USER webuser WITH PASSWORD 'CHANGEME';"
           sudo -u postgres psql -c "CREATE DATABASE note OWNER webuser;"
           sudo -u postgres psql -c "ALTER ROLE webuser CREATEDB;"
+          sudo -u postgres psql -d note -c "CREATE TABLE note (id SERIAL PRIMARY KEY, title TEXT, content TEXT);"
           sudo -u postgres psql -d note -c "ALTER TABLE note OWNER TO webuser;"
           sudo systemctl restart postgresql
       Tags:

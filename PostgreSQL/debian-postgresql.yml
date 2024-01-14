@@ -5,26 +5,22 @@ Parameters:
     Type: String
     Description: The CIDR range for SSH & PostgreSQL access.
     Default: 0.0.0.0/0
-
   KeypairName:
     Type: String
     Description: The name of the EC2 key pair to associate with the instance.
     Default: SNMKeypair
-
   AMI:
     Type: String
     Description: The AMI to use for the instance.
     Default: ami-058bd2d568351da34
-
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
     Default: SecureNotesManager
-
   Environment:
     Type: String
     Description: The environment for cost allocation.
-    Default: DEV
+    Default: Development
 
 Resources:
   DatabaseInstance:

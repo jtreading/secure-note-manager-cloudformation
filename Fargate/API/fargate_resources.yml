@@ -49,7 +49,7 @@ Resources:
           Essential: true
           Image: !Ref ImageLocation
           EnvironmentFiles:
-            - !Sub '{{resolve:ssm-secure:/snm/${Environment}/database_url}}'
+            - !Sub '{{resolve:ssm:/snm/${Environment}/database_url}}'
           LogConfiguration:
             LogDriver: awslogs
             Options:
@@ -68,8 +68,7 @@ Resources:
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      RuntimePlatform:
-        OperatingSystemFamily: LINUX
+      RuntimePlatform: LINUX  # Corrected the structure for RuntimePlatform
 
   ECSService:
     Type: 'AWS::ECS::Service'

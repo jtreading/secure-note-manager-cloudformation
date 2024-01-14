@@ -62,6 +62,9 @@ Resources:
             - ContainerPort: 3000
               HostPort: 3000
               Protocol: tcp
+            - ContainerPort: 5000
+              HostPort: 5000
+              Protocol: tcp
       Cpu: 1024
       ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
       Family: task-definition-cfn

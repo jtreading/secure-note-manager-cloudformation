@@ -48,7 +48,7 @@ Resources:
             - "./start.sh"
           Essential: true
           Environment:
-            - Name: API_URL
+            - Name: REACT_APP_API_URL
               Value: !Ref APIURL
           Image: !Ref ImageLocation
           LogConfiguration:

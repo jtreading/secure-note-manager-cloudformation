@@ -26,7 +26,7 @@ Parameters:
   APIURL:
     Type: String
     Description: The URL of the api to use in the application.
-    Default: http://0.0.0.0:5000
+    Default: http://api.ip.address:5000
 
 Resources:
   ECSCluster:

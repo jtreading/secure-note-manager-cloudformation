@@ -102,8 +102,8 @@ Resources:
       GroupDescription: Security group for the cluster
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
+          FromPort: 5000
+          ToPort: 5000
           CidrIp: !Ref IngressCIDR
 
   ClusterSubnet:

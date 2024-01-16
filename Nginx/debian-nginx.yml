@@ -21,6 +21,16 @@ Parameters:
     Description: The AMI to use for the instance.
     Default: ami-058bd2d568351da34
 
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development
+
 Resources:
   ReverseProxyInstance:
     Type: 'AWS::EC2::Instance'
@@ -79,6 +89,11 @@ Resources:
 
           # Display status after setup
           sudo systemctl status nginx.service
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   ReverseProxySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -93,3 +108,8 @@ Resources:
           FromPort: 80
           ToPort: 80
           CidrIp: !Ref IngressCIDR
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment

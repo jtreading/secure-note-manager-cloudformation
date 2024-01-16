@@ -27,17 +27,35 @@ Parameters:
     Type: String
     Description: The URL of the api to use in the application.
     Default: http://api.ip.address:5000
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development
 
 Resources:
   ECSCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
       ClusterName: !Sub '${AppName}-cluster'
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   LogGroup:
     Type: 'AWS::Logs::LogGroup'
     Properties:
       LogGroupName: !Sub '/ecs/${AppName}-log-group'
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   ECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
@@ -71,6 +89,11 @@ Resources:
         - FARGATE
       RuntimePlatform:
         OperatingSystemFamily: LINUX
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   ECSService:
     Type: 'AWS::ECS::Service'
@@ -87,6 +110,11 @@ Resources:
           Subnets:
             - !Ref ClusterSubnet
       TaskDefinition: !Ref ECSTaskDefinition
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   ClusterSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -97,6 +125,11 @@ Resources:
           FromPort: 3000
           ToPort: 3000
           CidrIp: !Ref IngressCIDR
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
 
   ClusterSubnet:
     Type: 'AWS::EC2::Subnet'
@@ -104,3 +137,8 @@ Resources:
       VpcId: !Ref VPCId
       CidrBlock: !Ref SubnetCIDR
       AvailabilityZone: us-east-1a
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment

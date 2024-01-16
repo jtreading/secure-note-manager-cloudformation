@@ -1,0 +1,11 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development

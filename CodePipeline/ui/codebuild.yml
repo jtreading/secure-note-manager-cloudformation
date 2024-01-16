@@ -23,25 +23,12 @@ Parameters:
   CodeBuildServiceRole:
     Type: String
     Description: ARN of Code Build Service Role
-  ProjectName:
-    Type: String
-    Description: The project name for cost allocation.
-    Default: SecureNotesManager
-  Environment:
-    Type: String
-    Description: The environment for cost allocation.
-    Default: Development
 
 Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Ref AppName
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
 
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -104,8 +91,3 @@ Resources:
                 - docker tag $DOCKER_IMAGE_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
                 - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
       TimeoutInMinutes: 60
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment

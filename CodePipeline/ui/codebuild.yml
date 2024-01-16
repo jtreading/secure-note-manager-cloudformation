@@ -20,6 +20,9 @@ Parameters:
   DockerHubPassword:
     Type: String
     Description: Docker Hub password
+  CodeBuildServiceRole:
+    Type: String
+    Description: ARN of Code Build Service Role
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -30,37 +33,6 @@ Parameters:
     Default: Development
 
 Resources:
-  CodeBuildServiceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: CodeBuildServiceRole
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: codebuild.amazonaws.com
-            Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
-        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
-      Policies:
-        - PolicyName: CodeBuildServicePolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:

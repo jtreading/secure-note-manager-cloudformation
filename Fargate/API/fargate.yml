@@ -18,22 +18,22 @@ Parameters:
   SubnetCIDR:
     Type: String
     Description: CIDR block for the subnet where the ECS cluster will be deployed.
-    Default: 172.31.96.0/24
+    Default: 172.31.112.0/20
   ImageLocation:
     Type: String
     Description: The location of the Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
-  APIURL:
+  DatabaseUrl:
     Type: String
-    Description: The URL of the api to use in the application.
-    Default: http://api.ip.address:5000
+    Description: The URL of the database to use in the application.
+    Default: postgresql://username:password@localhost:5432/databasename?schema=public
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
     Default: SecureNotesManager
   Environment:
     Type: String
-    Description: The environment for cost allocation.
+    Description: Environment name.
     Default: Development
 
 Resources:
@@ -62,25 +62,28 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Command:
-            - npm
-            - start
+            - "/bin/sh"
+            - "./start.sh"
           Essential: true
           Image: !Ref ImageLocation
+          Environment:
+            - Name: DATABASE_URL
+              Value: !Ref DatabaseUrl
           LogConfiguration:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref LogGroup
               awslogs-region: us-east-1
               awslogs-stream-prefix: ecs
-          Name: !Sub '${AppName}Task'
+          Name: !Sub '${AppName}-task'
           PortMappings:
-            - ContainerPort: 3000
-              HostPort: 3000
+            - ContainerPort: 5000
+              HostPort: 5000
               Protocol: tcp
-      Cpu: 256
+      Cpu: 1024
       ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
       Family: task-definition-cfn
-      Memory: 512
+      Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -95,7 +98,7 @@ Resources:
   ECSService:
     Type: 'AWS::ECS::Service'
     Properties:
-      ServiceName: !Sub '${AppName}Service'
+      ServiceName: !Sub '${AppName}-service'
       Cluster: !Ref ECSCluster
       DesiredCount: 1
       LaunchType: FARGATE
@@ -119,8 +122,8 @@ Resources:
       GroupDescription: Security group for the cluster
       SecurityGroupIngress:
         - IpProtocol: tcp
-          FromPort: 3000
-          ToPort: 3000
+          FromPort: 5000
+          ToPort: 5000
           CidrIp: !Ref IngressCIDR
       Tags:
         - Key: ProjectName

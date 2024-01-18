@@ -17,6 +17,10 @@ Parameters:
     Type: String
     Description: The AMI to use for the instance.
     Default: ami-058bd2d568351da34
+  SecurityGroup:
+    Type: String
+    Description: The security group to use for the instance.
+    Default: sg-0a0a0a0a0a0a0a0a0
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -34,7 +38,7 @@ Resources:
       InstanceType: t2.micro
       KeyName: !Ref KeypairName
       SecurityGroupIds:
-        - !Ref ReverseProxySecurityGroup
+        - !Ref SecurityGroup
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
@@ -84,25 +88,6 @@ Resources:
 
           # Display status after setup
           sudo systemctl status nginx.service
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-
-  ReverseProxySecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Security group for the Nginx reverse proxy
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref IngressCIDR
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: !Ref IngressCIDR
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName

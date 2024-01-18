@@ -8,6 +8,9 @@ Parameters:
     Type: String
     Description: Used for resource naming.
     Default: CFNCluster
+  ServiceRoleArn:
+    Type: String
+    Description: ARN of the IAM role for the Lambda function
   ProjectName:
     Type: String
     Description: Project name for cost allocation.
@@ -32,7 +35,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.handler
-      Role: !GetAtt GitHubMirrorLambdaRole.Arn
+      Role: !Ref ServiceRoleArn
       FunctionName: !Sub ${AppName}-GitHubMirrorFunction
       Code:
         InlineCode: |
@@ -58,34 +61,6 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
-
-  GitHubMirrorLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-            Action: sts:AssumeRole
-      Policies:
-        - PolicyName: GitHubMirrorLambdaPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - codecommit:GetRepository
-                Resource: '*'
-          Tags:
-            - Key: ProjectName
-              Value: !Ref ProjectName
-            - Key: Environment
-              Value: !Ref Environment
 
 Outputs:
   CodeCommitRepositoryArn:

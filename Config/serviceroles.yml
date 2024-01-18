@@ -36,3 +36,43 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
+
+    GitHubMirrorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GitHubMirrorLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - codecommit:GetRepository
+                Resource: '*'
+          Tags:
+            - Key: ProjectName
+              Value: !Ref ProjectName
+            - Key: Environment
+              Value: !Ref Environment
+
+Outputs:
+  CodeBuildServiceRoleArn:
+    Description: CodeBuild service role ARN
+    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-codebuild-service-role-arn'
+  GitHubMirrorLambdaRoleArn:
+    Description: GitHub mirror Lambda function role ARN
+    Value: !GetAtt GitHubMirrorLambdaRole.Arn
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-github-mirror-lambda-role-arn'

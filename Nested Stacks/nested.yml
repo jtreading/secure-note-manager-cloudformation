@@ -35,6 +35,7 @@ Resources:
     Properties:
       TemplateURL: <URL of the nested stack template>
       Parameters:
+        IngressCIDR: !Ref ExternalCIDR
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:

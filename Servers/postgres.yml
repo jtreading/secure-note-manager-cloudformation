@@ -1,10 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  IngressCIDR:
-    Type: String
-    Description: The CIDR range for SSH & PostgreSQL access.
-    Default: 0.0.0.0/0
   KeypairName:
     Type: String
     Description: The name of the EC2 key pair to associate with the instance.
@@ -45,7 +41,7 @@ Resources:
           sudo apt-get -y install postgresql
 
           PG_HBA_CONF="/etc/postgresql/15/main/pg_hba.conf"
-          echo "host    all             all             ${IngressCIDR}               md5" | sudo tee -a $PG_HBA_CONF
+          echo "host    all             all             0.0.0.0/0               md5" | sudo tee -a $PG_HBA_CONF
 
           PGSQL_CONF="/etc/postgresql/15/main/postgresql.conf"
           echo "listen_addresses = '*'" | sudo tee -a $PGSQL_CONF

@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
+  IngressCIDR:
+    Type: String
+    Description: The CIDR range allowed to access the application.
+    Default:
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -19,7 +23,41 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          CidrIp: !Ref IngressCIDR
+          SourceSecurityGroupId: !Ref APISecurityGroup
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  APISecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the API
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref UISecurityGroup
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref ReverseProxySecurityGroup
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  UISecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the UI
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !Ref ReverseProxySecurityGroup
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -56,3 +94,13 @@ Outputs:
     Value: !Ref ReverseProxySecurityGroup
     Export:
       Name: !Sub '${ProjectName}-${Environment}-reverse-proxy-security-group-id'
+  APISecurityGroupId:
+    Description: Security group ID for the API
+    Value: !Ref APISecurityGroup
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-api-security-group-id'
+  UISecurityGroupId:
+    Description: Security group ID for the UI
+    Value: !Ref UISecurityGroup
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-ui-security-group-id'

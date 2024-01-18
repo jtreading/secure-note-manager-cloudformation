@@ -1,10 +1,6 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  SubnetCIDR:
-    Type: String
-    Description: The CIDR range for the subnet.
-    Default: 172.31.112.0/20
   ProjectName:
     Type: String
     Description: Project name for cost allocation.
@@ -15,11 +11,23 @@ Parameters:
     Default: Development
 
 Resources:
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub '${ProjectName}-${Environment}-vpc'
+
   ECSClusterSubnet:
     Type: 'AWS::EC2::Subnet'
     Properties:
-      VpcId: !Ref VPCId
-      CidrBlock: !Ref SubnetCIDR
+      VpcId: !Ref MyVPC
       AvailabilityZone: us-east-1a
       Tags:
         - Key: ProjectName
@@ -28,6 +36,11 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
+  VPCId:
+    Description: VPC ID
+    Value: !Ref MyVPC
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-vpc-id'
   ECSClusterSubnetId:
     Description: Subnet ID for the ECS cluster
     Value: !Ref ECSClusterSubnet

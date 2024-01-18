@@ -72,6 +72,7 @@ Resources:
         Environment: !Ref Environment
       Outputs:
         - OutputKey: ECSClusterSubnetId
+        - OutputKey: VPCId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -112,7 +113,7 @@ Resources:
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:
-        - OutputKey: DatabaseInstancePublicIP
+        - OutputKey: ReverseProxyInstancePublicIP
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -125,8 +126,8 @@ Resources:
     Properties:
       TemplateURL: <URL of the nested stack template>
       Parameters:
-        IngressCIDR: <ParameterValue>
-        VPCId: <ParameterValue>
+        IngressCIDR: !ImportValue !Sub "${ReverseProxyStack}-ReverseProxyInstancePublicIP/32"
+        VPCId: !ImportValue Fn::Sub: "${NetworkStack}-VPCId"
         SubnetCIDR: !ImportValue Fn::Sub: "${NetworkStack}-ECSClusterCIDR"
         ClusterSecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSecurityGroupId"
         ClusterSubnet: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSubnetId"

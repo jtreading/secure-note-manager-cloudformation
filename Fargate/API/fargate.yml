@@ -82,7 +82,7 @@ Resources:
               Protocol: tcp
       Cpu: 1024
       ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
-      Family: task-definition-cfn
+      Family: !Sub '${AppName}-task-family'
       Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:
@@ -142,3 +142,14 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
+Outputs:
+  ECSClusterArn:
+    Description: ECS Cluster ARN
+    Value: !GetAtt ECSCluster.Arn
+  ECSTaskDefinitionArn:
+    Description: ECS Task Definition ARN
+    Value: !Ref ECSTaskDefinition
+  ECSServiceArn:
+    Description: ECS Service ARN
+    Value: !GetAtt ECSService.Arn

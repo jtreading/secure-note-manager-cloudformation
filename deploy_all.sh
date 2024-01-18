@@ -1,3 +1,9 @@
+# MASTERFLOW:
+#     deploy source cloudformation templates
+#     invoke lambda to update source code
+#     deploy nested stack
+
+
 #!/bin/bash
 
 # Set the path to the CloudFormation templates directory

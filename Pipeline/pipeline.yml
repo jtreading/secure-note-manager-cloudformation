@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  AppName:
+    Type: String
+    Description: Used to name resources.
+  CodeCommitRepositoryArn:
+    Type: String
+    Description: ARN of the CodeCommit repository
+  CodeBuildProjectArn:
+    Type: String
+    Description: ARN of the CodeBuild project for the build stage
+  EcsTaskDefinitionArn:
+    Type: String
+    Description: ARN of the existing ECS task definition for the deployment stage
+  ECSClusterName:
+    Type: String
+    Description: Name of the ECS cluster.
+  ECSServiceName:
+    Type: String
+    Description: Name of the ECS service.
+
+Resources:
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: MyCodePipeline
+      RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/service-role/AWS-CodePipeline-Service
+      ArtifactStore:
+        Type: S3
+        Location: my-codepipeline-artifacts-bucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: SourceAction
+              ActionTypeId:
+                Category: Source
+                Owner: AWS
+                Version: 1
+                Provider: CodeCommit
+              OutputArtifacts:
+                - Name: SourceOutput
+              Configuration:
+                RepositoryName: !Sub ${AWS::StackName}-codecommit-repository
+                BranchName: main
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: BuildAction
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName: !Sub ${AWS::StackName}-codebuild-project
+              RunOrder: 2
+        - Name: Deploy
+          Actions:
+            - Name: DeployAction
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ECS
+              InputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ClusterName: !Ref ECSClusterName
+                ServiceName: !Ref ECSServiceName
+                TaskDefinitionFamily: !Sub '${AppName}-task-family'
+                TaskDefinitionRevision: latest
+              RunOrder: 3
+
+Outputs:
+  PipelineName:
+    Value: !Ref CodePipeline
+    Description: Name of the CodePipeline

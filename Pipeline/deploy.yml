@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  EcsClusterName:
+    Type: String
+    Description: Name of the ECS cluster
+
+  EcrRepositoryName:
+    Type: String
+    Description: Name of the ECR repository
+
+Resources:
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${EcrRepositoryName}-CodeDeploy-Application
+
+  CodeDeployDeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: !Sub ${EcrRepositoryName}-Deployment-Group
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      ServiceRoleArn: arn:aws:iam::aws:role/AWS-CodeDeploy-Service-Role
+      TargetInstances:
+        - TagFilters:
+            - Key: ecs:cluster-name
+              Type: KEY_AND_VALUE
+              Value: !Ref EcsClusterName
+      Deployment:
+        Description: Deployment Configuration
+        IgnoreApplicationStopFailures: false

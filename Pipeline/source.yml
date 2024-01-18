@@ -1,0 +1,93 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name
+  AppName:
+    Type: String
+    Description: Used for resource naming.
+    Default: CFNCluster
+  ProjectName:
+    Type: String
+    Description: Project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: Environment name for cost allocation.
+    Default: Development
+
+Resources:
+  CodeCommitRepository:
+    Type: AWS::CodeCommit::Repository
+    Properties:
+      RepositoryName: !Sub ${AppName}-codecommit-repository
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  GitHubMirrorLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt GitHubMirrorLambdaRole.Arn
+      FunctionName: !Sub ${AppName}-GitHubMirrorFunction
+      Code:
+        InlineCode: |
+          const { execSync } = require('child_process');
+          const AWS = require('aws-sdk');
+          const codecommit = new AWS.CodeCommit();
+
+          exports.handler = async () => {
+              console.log('Cloning GitHub repository...');
+
+              const gitHubRepoUrl = `https://github.com/${GitHubRepo}.git`;
+              const codeCommitRepoUrl = (await codecommit.getRepository({ repositoryName: !Ref CodeCommitRepository }).promise()).repositoryMetadata.cloneUrlHttp;
+
+              // Clone GitHub repository
+              execSync(`git clone ${gitHubRepoUrl} && cd yourrepository && git push ${codeCommitRepoUrl} --all`);
+
+              console.log('GitHub repository cloned and pushed to CodeCommit.');
+          };
+      Runtime: nodejs14.x
+      Timeout: 60
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  GitHubMirrorLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: GitHubMirrorLambdaPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - codecommit:GetRepository
+                Resource: '*'
+          Tags:
+            - Key: ProjectName
+              Value: !Ref ProjectName
+            - Key: Environment
+              Value: !Ref Environment
+
+Outputs:
+  CodeCommitRepositoryArn:
+    Description: ARN of the CodeCommit repository
+    Value: !GetAtt CodeCommitRepository.Arn

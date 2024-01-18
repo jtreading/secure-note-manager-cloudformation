@@ -23,6 +23,14 @@ Parameters:
   CodeBuildServiceRole:
     Type: String
     Description: ARN of Code Build Service Role
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development
 
 Resources:
   ECRRepository:

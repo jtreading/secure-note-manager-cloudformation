@@ -5,7 +5,7 @@ Parameters:
     Type: String
     Description: The CIDR range for inbound access. (Point to the Internet.)
     Default: 0.0.0.0/0
-  EngressCIDR:
+  EgressCIDR:
     Type: String
     Description: The CIDR range for outbound access. (Point to ECS cluster.)
     Default: 0.0.0.0/0

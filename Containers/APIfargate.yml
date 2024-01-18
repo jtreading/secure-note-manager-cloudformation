@@ -131,7 +131,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  ClusterSubnet:
+  ECSClusterSubnet:
     Type: 'AWS::EC2::Subnet'
     Properties:
       VpcId: !Ref VPCId

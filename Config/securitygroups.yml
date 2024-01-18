@@ -4,7 +4,7 @@ Parameters:
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
-    Default: SecureNotesManager
+    Default: SecureNoteManager
   Environment:
     Type: String
     Description: The environment for cost allocation.

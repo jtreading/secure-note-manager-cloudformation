@@ -61,3 +61,10 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
+Outputs:
+  DatabaseInstancePublicIP:
+    Description: The public IP address of the database instance.
+    Value: !GetAtt DatabaseInstance.PublicIp
+    Export:
+      Name: !Sub ${ProjectName}-${Environment}-database-instance-public-ip

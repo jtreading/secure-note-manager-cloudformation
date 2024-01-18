@@ -1,16 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  GitHubRepo:
+  AppName: 
     Type: String
-    Description: GitHub repository name
-  AppName:
-    Type: String
-    Description: Used for resource naming.
-    Default: CFNCluster
-  ServiceRoleArn:
-    Type: String
-    Description: ARN of the IAM role for the Lambda function
+    Description: Used to name resources.
   ProjectName:
     Type: String
     Description: Project name for cost allocation.
@@ -31,31 +24,10 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  GitHubMirrorLambdaFunction:
-    Type: AWS::Lambda::Function
+  ECRRepository:
+    Type: AWS::ECR::Repository
     Properties:
-      Handler: index.handler
-      Role: !Ref ServiceRoleArn
-      FunctionName: !Sub ${AppName}-GitHubMirrorFunction
-      Code:
-        InlineCode: |
-          const { execSync } = require('child_process');
-          const AWS = require('aws-sdk');
-          const codecommit = new AWS.CodeCommit();
-
-          exports.handler = async () => {
-              console.log('Cloning GitHub repository...');
-
-              const gitHubRepoUrl = `https://github.com/${GitHubRepo}.git`;
-              const codeCommitRepoUrl = (await codecommit.getRepository({ repositoryName: !Ref CodeCommitRepository }).promise()).repositoryMetadata.cloneUrlHttp;
-
-              // Clone GitHub repository
-              execSync(`git clone ${gitHubRepoUrl} && cd yourrepository && git push ${codeCommitRepoUrl} --all`);
-
-              console.log('GitHub repository cloned and pushed to CodeCommit.');
-          };
-      Runtime: nodejs14.x
-      Timeout: 60
+      RepositoryName: !Sub ${AppName}-ecr-repository
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -63,6 +35,13 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
-  CodeCommitRepositoryArn:
-    Description: ARN of the CodeCommit repository
-    Value: !GetAtt CodeCommitRepository.Arn
+  CodeCommitRepositoryURL:
+    Description: CodeCommit repository URL
+    Value: !GetAtt CodeCommitRepository.CloneUrlHttp
+    Export:
+      Name: !Sub ${AppName}-codecommit-repository-url
+  ECRRepositoryURL:
+    Description: ECR repository URL
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AppName}-ecr-repository
+    Export:
+      Name: !Sub ${AppName}-ecr-repository-url

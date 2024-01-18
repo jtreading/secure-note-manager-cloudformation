@@ -6,11 +6,3 @@ Resources:
       AccessControl: Private
       VersioningConfiguration:
         Status: Enabled
-      LifecycleConfiguration:
-        Rules:
-          - Id: ExpireOldVersions
-            Status: Enabled
-            NoncurrentVersionExpirationInDays: 30
-            NoncurrentVersionTransitions:
-              - StorageClass: GLACIER
-                TransitionInDays: 60

@@ -1,0 +1,48 @@
+Resources:
+  SecurityGroupStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: <URL of the nested stack template>
+      Parameters:
+        ProjectName: SecureNotesManager
+        Environment: Development
+      Outputs:
+        - OutputKey: DatabaseSecurityGroupId
+        - OutputKey: ReverseProxySecurityGroupId
+      Tags:
+        - Key: <TagKey>
+          Value: <TagValue>
+
+  DatabaseStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: <URL of the nested stack template>
+      Parameters:
+        IngressCIDR: <ParameterValue>
+        KeypairName: <ParameterValue>
+        AMI: ami-058bd2d568351da34
+        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-DatabaseSecurityGroupId"
+        ProjectName: SecureNotesManager
+        Environment: Development
+      Outputs:
+        - OutputKey: DatabaseInstancePublicIP
+      Tags:
+        - Key: <TagKey>
+          Value: <TagValue>
+
+  ReverseProxyStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: <URL of the nested stack template>
+      Parameters:
+        IngressCIDR: <ParameterValue>
+        KeypairName: <ParameterValue>
+        AMI: ami-058bd2d568351da34
+        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ReverseProxySecurityGroupId"
+        ProjectName: SecureNotesManager
+        Environment: Development
+      Outputs:
+        - OutputKey: DatabaseInstancePublicIP
+      Tags:
+        - Key: <TagKey>
+          Value: <TagValue>

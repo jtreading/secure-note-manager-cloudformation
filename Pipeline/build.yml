@@ -23,6 +23,9 @@ Parameters:
   CodeBuildServiceRole:
     Type: String
     Description: ARN of Code Build Service Role
+  ECRRepository:
+    Type: String
+    Description: ECR repository name
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -33,16 +36,6 @@ Parameters:
     Default: Development
 
 Resources:
-  ECRRepository:
-    Type: AWS::ECR::Repository
-    Properties:
-      RepositoryName: !Ref AppName
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
-
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:

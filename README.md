@@ -1,6 +1,6 @@
 # Secure Note Manager CloudFormation
 
-These CloudFormation templates aim to **deploy infrastructure and CI/CD pipelines** for a Secure Note Manager application on Amazon Web Services. This project utilizes many technologies that are listed below, and is created for **professional development** as well as a **demonstration of skill** with the technologies in use. The primary goal is to **automate complete environment deployment, minimize deployment effort, maximize consistency and mitigate risk while maintaining best practices** for application development, security, source control management, etc.
+These CloudFormation templates aim to **deploy infrastructure and CI/CD pipelines** for a Secure Note Manager application on Amazon Web Services. This project utilizes many technologies that are listed below, and is created for **professional development** as well as a **demonstration of skill** with the technologies in use. Primary goals are to **automate complete environment deployment, minimize deployment effort, maximize consistency and mitigate risk while maintaining best practices** for application development, security, source control management, etc.
 
 ### Work in Progress Warning
 

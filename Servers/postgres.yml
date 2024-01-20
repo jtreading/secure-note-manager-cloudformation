@@ -59,7 +59,7 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
-  DatabaseInstancePublicIP:
+  DatabasePublicIP:
     Description: The public IP address of the database instance.
     Value: !GetAtt DatabaseInstance.PublicIp
     Export:

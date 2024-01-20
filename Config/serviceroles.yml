@@ -37,42 +37,28 @@ Resources:
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
 
-    GitHubMirrorLambdaRole:
+  ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: ECSTaskExecutionRole
       AssumeRolePolicyDocument:
-        Version: '2012-10-17'
+        Version: "2012-10-17"
         Statement:
           - Effect: Allow
             Principal:
-              Service: lambda.amazonaws.com
+              Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
-      Policies:
-        - PolicyName: GitHubMirrorLambdaPolicy
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                  - codecommit:GetRepository
-                Resource: '*'
-          Tags:
-            - Key: ProjectName
-              Value: !Ref ProjectName
-            - Key: Environment
-              Value: !Ref Environment
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
 
 Outputs:
-  CodeBuildServiceRoleArn:
+  CodeBuildServiceRole:
     Description: CodeBuild service role ARN
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
       Name: !Sub '${ProjectName}-${Environment}-codebuild-service-role-arn'
-  GitHubMirrorLambdaRoleArn:
-    Description: GitHub mirror Lambda function role ARN
-    Value: !GetAtt GitHubMirrorLambdaRole.Arn
+  ECSTaskExecutionRole:
+    Description: ECS task execution role ARN
+    Value: !GetAtt ECSTaskExecutionRole.Arn
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-github-mirror-lambda-role-arn'
+      Name: !Sub '${ProjectName}-${Environment}-ecs-task-execution-role-arn'

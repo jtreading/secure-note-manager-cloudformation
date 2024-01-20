@@ -30,6 +30,25 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  ReverseProxySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Security group for the Nginx reverse proxy
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref IngressCIDR
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref IngressCIDR
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
   APISecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
@@ -63,43 +82,24 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
-  
-  ReverseProxySecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-      GroupDescription: Security group for the Nginx reverse proxy
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: !Ref IngressCIDR
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: !Ref IngressCIDR
-      Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
-        - Key: Environment
-          Value: !Ref Environment
 
 Outputs:
-  DatabaseSecurityGroupId:
+  DatabaseSecurityGroup:
     Description: Security group ID for the PostgreSQL database
     Value: !Ref DatabaseSecurityGroup
     Export:
       Name: !Sub '${ProjectName}-${Environment}-database-security-group-id'
-  ReverseProxySecurityGroupId:
+  ReverseProxySecurityGroup:
     Description: Security group ID for the Nginx reverse proxy
     Value: !Ref ReverseProxySecurityGroup
     Export:
       Name: !Sub '${ProjectName}-${Environment}-reverse-proxy-security-group-id'
-  APISecurityGroupId:
+  APISecurityGroup:
     Description: Security group ID for the API
     Value: !Ref APISecurityGroup
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-security-group-id'
-  UISecurityGroupId:
+  UISecurityGroup:
     Description: Security group ID for the UI
     Value: !Ref UISecurityGroup
     Export:

@@ -1,32 +1,30 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  IngressCIDR:
-    Type: String
-    Description: The CIDR range allowed to access the cluster. Replace with reverse proxy server IP range.
-    Default: 0.0.0.0/0
-  AccountId:
-    Type: String
-    Description: Amazon account ID, used for locating default execution roles.
-    Default: aws_account_id
-  AppName:
-    Type: String
-    Description: Used to name the ECS cluster.
-    Default: CFNCluster
   VPCId:
     Type: AWS::EC2::VPC::Id
     Description: The ID of the VPC where the ECS cluster will be deployed.
-  SubnetCIDR:
+  ClusterSubnet:
+    Type: AWS::EC2::Subnet::Id
+    Description: The subnet where the ECS cluster will be deployed.
+  UIImageLocation:
     Type: String
-    Description: CIDR block for the subnet where the ECS cluster will be deployed.
-    Default: 172.31.112.0/20
-  ImageLocation:
+    Description: The location of the UI Docker image to use in ECS.
+    Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  APIImageLocation:
     Type: String
-    Description: The location of the Docker image to use in ECS.
+    Description: The location of the API Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
   DatabaseUrl:
     Type: String
     Description: The URL of the database to use in the application.
     Default: postgresql://username:password@localhost:5432/databasename?schema=public
+  ECSTaskExecutionRole:
+    Type: String
+    Description: The ARN of the ECS task execution role.
+  AppName:
+    Type: String
+    Description: Used to name the ECS cluster.
+    Default: CFNCluster
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -86,7 +84,7 @@ Resources:
               HostPort: 5000
               Protocol: tcp
       Cpu: 1024
-      ExecutionRoleArn: !Sub 'arn:aws:iam::${AccountId}:role/ecsTaskExecutionRole'
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
       Family: !Sub '${AppName}-task-family'
       Memory: 2048
       NetworkMode: awsvpc
@@ -101,12 +99,12 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
-  ECSClusterArn:
+  ECSCluster:
     Description: ECS Cluster ARN
     Value: !GetAtt ECSCluster.Arn
-  ECSTaskDefinitionArn:
+  ECSTaskDefinition:
     Description: ECS Task Definition ARN
     Value: !Ref ECSTaskDefinition
-  ECSServiceArn:
+  ECSService:
     Description: ECS Service ARN
     Value: !GetAtt ECSService.Arn

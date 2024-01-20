@@ -5,10 +5,12 @@ Parameters:
     Type: String
     Description: The CIDR range for inbound access. (Point to the Internet.)
     Default: 0.0.0.0/0
-  EgressCIDR:
+  UIElasticIP:
     Type: String
-    Description: The CIDR range for outbound access. (Point to ECS cluster.)
-    Default: 0.0.0.0/0
+    Description: The Elastic IP address for the UI.
+  APIElasticIP:
+    Type: String
+    Description: The Elastic IP address for the API.
   KeypairName:
     Type: String
     Description: The name of the EC2 key pair to associate with the instance.

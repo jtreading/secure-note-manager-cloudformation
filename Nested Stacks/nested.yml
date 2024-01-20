@@ -11,12 +11,8 @@ Parameters:
     Default: SNMKeypair
   ExternalCIDR:
     Type: String
-    Description: The CIDR range for inbound access. (Point to the Internet.)
+    Description: The CIDR range for inbound access.
     Default: 0.0.0.0/0
-  ECSClusterCIDR:
-    Type: String
-    Description: The CIDR range for the ECS cluster.
-    Default: 172.31.112.0/20
   ProjectName:
     Type: String
     Description: Project name for cost allocation.
@@ -27,9 +23,7 @@ Parameters:
     Default: Development
 
 Resources:
-# CONFIG
-
-  # good to go
+  # CONFIG
   SecurityGroupStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -39,14 +33,16 @@ Resources:
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:
-        - OutputKey: DatabaseSecurityGroupId
-        - OutputKey: ReverseProxySecurityGroupId
+        - OutputKey: DatabaseSecurityGroup
+        - OutputKey: ReverseProxySecurityGroup
+        - OutputKey: APISecurityGroup
+        - OutputKey: UISecurityGroup
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
-  #good to go
+
   ServiceRolesStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -56,7 +52,7 @@ Resources:
         Environment: !Ref Environment
       Outputs:
         - OutputKey: CodeBuildServiceRole
-        - OutputKey: GitHubMirrorLambdaRole
+        - OutputKey: ECSTaskExecutionRole
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -70,30 +66,33 @@ Resources:
       Parameters:
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
+        UISecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-UISecurityGroupId"
       Outputs:
-        - OutputKey: ECSClusterSubnetId
         - OutputKey: VPCId
+        - OutputKey: ECSClusterSubnet
+        - OutputKey: PostgresElasticIP
+        - OutputKey: NginxElasticIP
+        - OutputKey: UIElasicIP
+        - OutputKey: APIElasticIP
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
-# SERVERS
-  # needs output of api stack for ingress cidr
+  # SERVERS
   DatabaseStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: <URL of the nested stack template>
       Parameters:
-        IngressCIDR: api public ip/32
         KeypairName: !Ref KeyPairName
         AMI: ami-058bd2d568351da34
-        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-DatabaseSecurityGroupId"
+        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-DatabaseSecurityGroup"
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:
-        - OutputKey: DatabaseInstancePublicIP
+        - OutputKey: DatabasePublicIP
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -106,10 +105,11 @@ Resources:
       TemplateURL: <URL of the nested stack template>
       Parameters:
         IngressCIDR: !Ref ExternalCIDR
-        EgressCIDR: !ImportValue Fn::Sub: "${APIFargateStack}-ECSClusterCIDR"
+        UIElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-UIElasticIP"
+        APIElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-APIElasticIP"
         KeypairName: !Ref KeyPairName
         AMI: ami-058bd2d568351da34
-        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ReverseProxySecurityGroupId"
+        SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ReverseProxySecurityGroup"
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:
@@ -121,7 +121,7 @@ Resources:
           Value: !Ref Environment
 
 # CONTAINERS
-  APIFargateStack:
+  FargateStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: <URL of the nested stack template>
@@ -140,7 +140,26 @@ Resources:
           Value: <TagValue>
 
 # PIPELINE
-  PipelineStack:
+  APIPipelineStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: <URL of the nested stack template>
+      Parameters:
+        GitHubRepo: <ParameterValue>
+        AWSRegion: <ParameterValue>
+        AWSAccountId: <ParameterValue>
+        AppName: SecureNotesManager
+        DockerHubUsername: <ParameterValue>
+        DockerHubPassword: <ParameterValue>
+        CodeBuildServiceRole: !ImportValue Fn::Sub: "${ServiceRolesStack}-CodeBuildServiceRoleArn"
+        ECRRepository: !ImportValue Fn::Sub: "${APIFargateStack}-ECRRepositoryURL"
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+      Tags:
+        - Key: <TagKey>
+          Value: <TagValue>
+
+  UIPipelineStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: <URL of the nested stack template>

@@ -9,6 +9,9 @@ Parameters:
     Type: String
     Description: Environment name for cost allocation.
     Default: Development
+  UISecurityGroup:
+    Type: String
+    Description: The ID of the security group for the UI.
 
 Resources:
   MyVPC:
@@ -35,14 +38,99 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  UIServiceNetworkLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
+      Scheme: internet-facing
+      Subnets:
+        - !Ref ECSClusterSubnet
+      SecurityGroups:
+        - !GetAtt UISecurityGroup.GroupId
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+  
+  APIServiceNetworkLoadBalancer:
+    Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties:
+      Name: !Sub '${ProjectName}-${Environment}-api-nlb'
+      Scheme: internet-facing
+      Subnets:
+        - !Ref ECSClusterSubnet
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  PostgresElasticIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+  NginxElasticIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+  UIElasticIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+  APIElasticIP:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
 Outputs:
   VPCId:
     Description: VPC ID
     Value: !Ref MyVPC
     Export:
       Name: !Sub '${ProjectName}-${Environment}-vpc-id'
-  ECSClusterSubnetId:
+  ECSClusterSubnet:
     Description: Subnet ID for the ECS cluster
     Value: !Ref ECSClusterSubnet
     Export:
       Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subnet-id'
+  PostgresElasticIP:
+    Description: Elastic IP for the Postgres EC2 instance
+    Value: !Ref PostgresElasticIP
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-postgres-elastic-ip'
+  NginxElasticIP:
+    Description: Elastic IP for the Nginx EC2 instance
+    Value: !Ref NginxElasticIP
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-nginx-elastic-ip'
+  UIElasticIP:
+    Description: Elastic IP for the UI ECS service
+    Value: !Ref UIElasticIP
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-ui-elastic-ip'
+  APIElasticIP:
+    Description: Elastic IP for the API ECS service
+    Value: !Ref APIElasticIP
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-api-elastic-ip'

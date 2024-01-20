@@ -9,7 +9,7 @@ Parameters:
     Type: String
     Description: The name of the EC2 key pair to associate with resources.
     Default: SNMKeypair
-  ExternalCIDR:
+  IngressCIDR:
     Type: String
     Description: The CIDR range for inbound access.
     Default: 0.0.0.0/0
@@ -29,7 +29,7 @@ Resources:
     Properties:
       TemplateURL: <URL of the nested stack template>
       Parameters:
-        IngressCIDR: !Ref ExternalCIDR
+        IngressCIDR: !Ref IngressCIDR
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:
@@ -66,10 +66,13 @@ Resources:
       Parameters:
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-        UISecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-UISecurityGroupId"
+        UISecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-UISecurityGroup"
+        APISecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-APISecurityGroup"
       Outputs:
         - OutputKey: VPCId
         - OutputKey: ECSClusterSubnet
+        - OutputKey: UIServiceNetworkLoadBalancer
+        - OutputKey: APIServiceNetworkLoadBalancer
         - OutputKey: PostgresElasticIP
         - OutputKey: NginxElasticIP
         - OutputKey: UIElasicIP
@@ -87,12 +90,11 @@ Resources:
       TemplateURL: <URL of the nested stack template>
       Parameters:
         KeypairName: !Ref KeyPairName
+        DatabaseElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-PostgresElasticIP"
         AMI: ami-058bd2d568351da34
         SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-DatabaseSecurityGroup"
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-      Outputs:
-        - OutputKey: DatabasePublicIP
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -104,7 +106,8 @@ Resources:
     Properties:
       TemplateURL: <URL of the nested stack template>
       Parameters:
-        IngressCIDR: !Ref ExternalCIDR
+        IngressCIDR: !Ref IngressCIDR
+        ReverseProxyElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-NginxElasticIP"
         UIElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-UIElasticIP"
         APIElasticIP: !ImportValue Fn::Sub: "${NetworkStack}-APIElasticIP"
         KeypairName: !Ref KeyPairName
@@ -112,8 +115,6 @@ Resources:
         SecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ReverseProxySecurityGroup"
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
-      Outputs:
-        - OutputKey: ReverseProxyInstancePublicIP
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -129,8 +130,8 @@ Resources:
         IngressCIDR: !ImportValue !Sub "${ReverseProxyStack}-ReverseProxyInstancePublicIP/32"
         VPCId: !ImportValue Fn::Sub: "${NetworkStack}-VPCId"
         SubnetCIDR: !ImportValue Fn::Sub: "${NetworkStack}-ECSClusterCIDR"
-        ClusterSecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSecurityGroupId"
-        ClusterSubnet: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSubnetId"
+        ClusterSecurityGroup: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSecurityGroup"
+        ClusterSubnet: !ImportValue Fn::Sub: "${SecurityGroupStack}-ClusterSubnet"
         ProjectName: !Ref ProjectName
         Environment: !Ref Environment
       Outputs:

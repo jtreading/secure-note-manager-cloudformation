@@ -5,6 +5,9 @@ Parameters:
     Type: String
     Description: The CIDR range for inbound access. (Point to the Internet.)
     Default: 0.0.0.0/0
+  ReverseProxyElasticIP:
+    Type: String
+    Description: The Elastic IP address for the reverse proxy.
   UIElasticIP:
     Type: String
     Description: The Elastic IP address for the UI.
@@ -95,3 +98,9 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
+  IPAssoc:
+  Type: AWS::EC2::EIPAssociation
+  Properties:
+    InstanceId: !Ref ReverseProxyInstance
+    EIP: !Ref ReverseProxyElasticIP

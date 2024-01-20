@@ -1,71 +1,46 @@
-# Secure Note Manager CloudFormation Stack
+# Secure Note Manager CloudFormation
 
-This CloudFormation stack deploys a Secure Note Manager application on AWS. The application consists of the following resources:
+These CloudFormation templates aim to **deploy infrastructure and CI/CD pipelines** for a Secure Note Manager application on Amazon Web Services. This project utilizes many technologies that are listed below, and is created for **professional development** as well as a **demonstration of skill** with the technologies in use. The primary goal is to **automate complete environment deployment, minimize deployment effort, maximize consistency and mitigate risk while maintaining best practices** for application development, security, source control management, etc.
 
-- EC2 Nginx Reverse Proxy Server
-- EC2 PostgreSQL Database
-- ECS Fargate Cluster for UI
-- ECS Fargate Cluster for API
-- CodePipeline for automatic CI/CD
+### WIP WARNING!
 
-## Prerequisites
+This project is a work in progress. Some features may not work as intended and implementation details may change significantly.
 
-Before deploying the stack, make sure you have the following:
+### Technologies in Use
 
-- AWS CLI installed and configured
-- AWS credentials with sufficient permissions
-- Docker installed (for local development)
+The following technologies and practices are targeted within this project.
 
-## Deployment Steps
+* **Infrastructure as Code**: All infrastructure is created as code with AWS CloudFormation, providing automated and consistent deployments with many additional benefits that come with using source control management.
+* **CI/CD Pipelines**: Stacks are included to create CI/CD Pipelines for two containerized applications, a Node.js web application as well as an Node.js Express API.
+* **Container Orchestration**: Both of the Node.js applications have been containerized with Docker, providing portability, flexibility with deployment, as well as the increased efficiency achieved through virtualization.
+* **Nginx Configuration**: The application is accessed through an Nginx server that is configured as a reverse proxy, providing an additional layer of security, as well as access control and logging.
+* **Cybersecurity Principles**: Security is one of the top concerns with every part of this application. Great care is taken to restrict traffic to what is necessary through the use of security groups. In addition, no direct access is allowed to application infrastructure, with all inbound requests being served through the reverse proxy.
 
-1. Clone this repository:
+### Template Guide
 
-    ```bash
-    git clone https://github.com/your-repo/secure-note-manager-cloudformation.git
-    ```
+Within this repository, you will find the following folders.
 
-2. Navigate to the project directory:
+* **Config**: This folder contains CloudFormation templates for base configuration, primarily including resources with little to no dependencies. S3 buckets, security groups, network configuration, and IAM roles may be found here.
+* **Containers**: This folder contains a CloudFormation template for an ECS Fargate Cluster as well as its accompanying services and tasks needed for running the UI and API containers.
+* **Nested Stacks**: This folder contains a nested stack that will deploy all other included CloudFormation templates with one action. This is useful for quickly setting up an independent environment, for testing purposes or otherwise. *(Work in Progress!)*
+* **Pipelines**: This folder contains CloudFormation templates needed for a completely automated CI/CD pipeline using CodeCommit, CodeBuild, and CodePipeline.
+* **Scripts**: This folder contains supporting shell scripts that aid deployment.
+* **Servers**: This folder contains CloudFormation templates for EC2 instances that host an Nginx reverse proxy server as well as a Postgresql database. Creation and configuration scripts are included with each to quickly deploy the desired server configuration.
 
-    ```bash
-    cd secure-note-manager-cloudformation
-    ```
+### Known Issues & Potential Enhancements
 
-3. Deploy the CloudFormation stack:
+* **Nested Stack**: The nested stack is still in development and will require further orchestration work for seamless deployment.
+* **Auto-scaling**: For ease of demonstration and expedited development, auto-scaling groups have not yet been included. Auto-scaling groups provide a simple and configurable way to vertically or horizontally scale applications based on either preconfigured or user-defined metrics. They can be implemented with the reverse proxy server as well as configured within the ECS tasks to provide a more robust, resilient, and load-bearing application.
 
-    ```bash
-    aws cloudformation deploy --template-file stack.yml --stack-name secure-note-manager-stack --capabilities CAPABILITY_IAM
-    ```
+### More Information
 
-4. Wait for the stack deployment to complete.
+You can learn more about the technologies and principles used in this project by visiting the following web pages.
 
-5. Access the Secure Note Manager application using the provided URLs.
-
-## Configuration
-
-The CloudFormation stack can be customized by modifying the `stack.yml` file. You can adjust parameters such as instance types, database credentials, and container images.
-
-## Development
-
-To run the application locally for development purposes, follow these steps:
-
-1. Install the required dependencies:
-
-    ```bash
-    npm install
-    ```
-
-2. Start the development server:
-
-    ```bash
-    npm run dev
-    ```
-
-3. Access the application at `http://localhost:3000`.
-
-## CI/CD
-
-The CodePipeline included in this stack automatically builds and deploys the application whenever changes are pushed to the repository. The pipeline is triggered by changes to the `main` branch.
-
-## Cleanup
-
-To delete the CloudFormation stack and all associated resources, run the following command:
+* CloudFormation, Infrastructure as Code: [AWS Docs: Cloudformation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
+* CodePipeline, CI/CD: [AWS Docs: CodePipeline](https://docs.aws.amazon.com/codepipeline/latest/userguide/welcome.html)
+* Containerization with Docker: [Docker Docs: Overview](https://docs.docker.com/get-started/overview/)
+* Nginx: [What is NGINX?](https://www.nginx.com/resources/glossary/nginx/)
+* Cybersecurity:
+  * [Synopsys: Application Security](https://www.synopsys.com/glossary/what-is-application-security.html)
+  * [AWS Docs: Security Groups](https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html)
+  * [Antisyphon: Pay What You Can Training](https://www.antisyphontraining.com/pay-what-you-can/)

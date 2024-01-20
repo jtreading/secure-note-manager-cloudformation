@@ -5,6 +5,9 @@ Parameters:
     Type: String
     Description: The name of the EC2 key pair to associate with the instance.
     Default: SNMKeypair
+  DatabaseElasticIP:
+    Type: String
+    Description: The Elastic IP address for the database.
   AMI:
     Type: String
     Description: The AMI to use for the instance.
@@ -58,9 +61,8 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-Outputs:
-  DatabasePublicIP:
-    Description: The public IP address of the database instance.
-    Value: !GetAtt DatabaseInstance.PublicIp
-    Export:
-      Name: !Sub ${ProjectName}-${Environment}-database-instance-public-ip
+  IPAssoc:
+  Type: AWS::EC2::EIPAssociation
+  Properties:
+    InstanceId: !Ref DatabaseInstance
+    EIP: !Ref DatabaseElasticIP

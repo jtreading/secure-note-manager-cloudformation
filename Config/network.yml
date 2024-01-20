@@ -12,8 +12,12 @@ Parameters:
   UISecurityGroup:
     Type: String
     Description: The ID of the security group for the UI.
+  APISecurityGroup:
+    Type: String
+    Description: The ID of the security group for the API.
 
 Resources:
+  # NETWORKS
   MyVPC:
     Type: 'AWS::EC2::VPC'
     Properties:
@@ -38,6 +42,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  # NETWORK LOAD BALANCERS
   UIServiceNetworkLoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
@@ -60,12 +65,15 @@ Resources:
       Scheme: internet-facing
       Subnets:
         - !Ref ECSClusterSubnet
+      SecurityGroups:
+        - !GetAtt APISecurityGroup.GroupId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
 
+  # ELASTIC IPS
   PostgresElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -75,6 +83,7 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+          
   NginxElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -84,6 +93,7 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
   UIElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -93,6 +103,7 @@ Resources:
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
   APIElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
@@ -134,3 +145,13 @@ Outputs:
     Value: !Ref APIElasticIP
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-elastic-ip'
+  UIServiceNetworkLoadBalancer:
+    Description: Network load balancer for the UI
+    Value: !Ref UIServiceNetworkLoadBalancer
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
+  APIServiceNetworkLoadBalancer:
+    Description: Network load balancer for the API
+    Value: !Ref APIServiceNetworkLoadBalancer
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-api-nlb'

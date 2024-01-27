@@ -14,6 +14,12 @@ Parameters:
     Type: String
     Description: The location of the API Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  UIElasticIP:
+    Type: String
+    Description: The Elastic IP address to use for the UI.
+  APIElasticIP:
+    Type: String
+    Description: The Elastic IP address to use for the API.
   DatabaseUrl:
     Type: String
     Description: The URL of the database to use in the application.
@@ -66,7 +72,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  ECSTaskDefinition:
+  APIECSTaskDefinition:
     Type: 'AWS::ECS::TaskDefinition'
     Properties:
       ContainerDefinitions:
@@ -74,18 +80,50 @@ Resources:
             - "/bin/sh"
             - "./start.sh"
           Essential: true
-          Image: !Ref ImageLocation
+          Image: !Ref APIImageLocation
           Environment:
             - Name: DATABASE_URL
               Value: !Ref DatabaseUrl
-          Name: !Sub '${AppName}-task'
+          Name: !Sub '${AppName}-api-task'
           PortMappings:
             - ContainerPort: 5000
               HostPort: 5000
               Protocol: tcp
       Cpu: 1024
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
-      Family: !Sub '${AppName}-task-family'
+      Family: !Sub '${AppName}-api-task-family'
+      Memory: 2048
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  UIECSTaskDefinition:
+    Type: 'AWS::ECS::TaskDefinition'
+    Properties:
+      ContainerDefinitions:
+        - Command:
+            - "/bin/sh"
+            - "./start.sh"
+          Essential: true
+          Image: !Ref UIImageLocation
+          Environment:
+            - Name: API_URL
+              Value: !Ref APIElasticIP
+          Name: !Sub '${AppName}-ui-task'
+          PortMappings:
+            - ContainerPort: 3000
+              HostPort: 3000
+              Protocol: tcp
+      Cpu: 1024
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      Family: !Sub '${AppName}-ui-task-family'
       Memory: 2048
       NetworkMode: awsvpc
       RequiresCompatibilities:

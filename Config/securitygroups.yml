@@ -4,7 +4,7 @@ Parameters:
   IngressCIDR:
     Type: String
     Description: The CIDR range allowed to access the application.
-    Default:
+    Default: 0.0.0.0/0
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -23,7 +23,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5432
           ToPort: 5432
-          SourceSecurityGroupId: !Ref APISecurityGroup
+          SourceSecurityGroupId: !GetAtt APISecurityGroup.GroupId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -57,11 +57,11 @@ Resources:
         - IpProtocol: tcp
           FromPort: 5000
           ToPort: 5000
-          SourceSecurityGroupId: !Ref UISecurityGroup
+          SourceSecurityGroupId: !GetAtt UISecurityGroup.GroupId
         - IpProtocol: tcp
           FromPort: 5000
           ToPort: 5000
-          SourceSecurityGroupId: !Ref ReverseProxySecurityGroup
+          SourceSecurityGroupId: !GetAtt ReverseProxySecurityGroup.GroupId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -76,7 +76,7 @@ Resources:
         - IpProtocol: tcp
           FromPort: 443
           ToPort: 443
-          SourceSecurityGroupId: !Ref ReverseProxySecurityGroup
+          SourceSecurityGroupId: !GetAtt ReverseProxySecurityGroup.GroupId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -86,21 +86,21 @@ Resources:
 Outputs:
   DatabaseSecurityGroup:
     Description: Security group ID for the PostgreSQL database
-    Value: !Ref DatabaseSecurityGroup
+    Value: !GetAtt DatabaseSecurityGroup.GroupId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-database-security-group-id'
   ReverseProxySecurityGroup:
     Description: Security group ID for the Nginx reverse proxy
-    Value: !Ref ReverseProxySecurityGroup
+    Value: !GetAtt ReverseProxySecurityGroup.GroupId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-reverse-proxy-security-group-id'
   APISecurityGroup:
     Description: Security group ID for the API
-    Value: !Ref APISecurityGroup
+    Value: !GetAtt APISecurityGroup.GroupId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-security-group-id'
   UISecurityGroup:
     Description: Security group ID for the UI
-    Value: !Ref UISecurityGroup
+    Value: !GetAtt UISecurityGroup.GroupId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-ui-security-group-id'

@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
+  VpcId:
+    Type: String
+    Description: The ID of the VPC where security groups will be created.
   IngressCIDR:
     Type: String
     Description: The CIDR range allowed to access the application.
@@ -18,6 +21,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: Security group for the PostgreSQL database
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -33,6 +37,7 @@ Resources:
   ReverseProxySecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: Security group for the Nginx reverse proxy
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -52,6 +57,7 @@ Resources:
   APISecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: Security group for the API
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -71,6 +77,7 @@ Resources:
   UISecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
+      VpcId: !Ref VpcId
       GroupDescription: Security group for the UI
       SecurityGroupIngress:
         - IpProtocol: tcp

@@ -8,7 +8,7 @@ Parameters:
   Environment:
     Type: String
     Description: Environment name for cost allocation.
-    Default: Development
+    Default: Dev
   UISecurityGroup:
     Type: String
     Description: The ID of the security group for the UI.
@@ -21,6 +21,7 @@ Resources:
   MyVPC:
     Type: 'AWS::EC2::VPC'
     Properties:
+      CidrBlock: 10.0.0.0/16
       EnableDnsSupport: true
       EnableDnsHostnames: true
       Tags:
@@ -31,11 +32,24 @@ Resources:
         - Key: Name
           Value: !Sub '${ProjectName}-${Environment}-vpc'
 
-  ECSClusterSubnet:
+  ECSClusterSubnetA:
     Type: 'AWS::EC2::Subnet'
     Properties:
+      CidrBlock: 10.0.1.0/24
       VpcId: !Ref MyVPC
       AvailabilityZone: us-east-1a
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ECSClusterSubnetB:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.2.0/24
+      VpcId: !Ref MyVPC
+      AvailabilityZone: us-east-1b
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -47,11 +61,12 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
-      Scheme: internet-facing
+      Scheme: internal
       Subnets:
-        - !Ref ECSClusterSubnet
+        - !Ref ECSClusterSubnetA
+        - !Ref ECSClusterSubnetB
       SecurityGroups:
-        - !GetAtt UISecurityGroup.GroupId
+        - !Ref UISecurityGroup
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -62,11 +77,12 @@ Resources:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
       Name: !Sub '${ProjectName}-${Environment}-api-nlb'
-      Scheme: internet-facing
+      Scheme: internal
       Subnets:
-        - !Ref ECSClusterSubnet
+        - !Ref ECSClusterSubnetA
+        - !Ref ECSClusterSubnetB
       SecurityGroups:
-        - !GetAtt APISecurityGroup.GroupId
+        - !Ref APISecurityGroup
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -117,41 +133,46 @@ Resources:
 Outputs:
   VPCId:
     Description: VPC ID
-    Value: !Ref MyVPC
+    Value: !GetAtt MyVPC.VpcId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-vpc-id'
-  ECSClusterSubnet:
+  ECSClusterSubnetA:
     Description: Subnet ID for the ECS cluster
-    Value: !Ref ECSClusterSubnet
+    Value: !GetAtt ECSClusterSubnetA.SubnetId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subnet-id'
+      Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subneta-id'
+  ECSClusterSubnetB:
+    Description: Subnet ID for the ECS cluster
+    Value: !GetAtt ECSClusterSubnetA.SubnetId
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subnetb-id'
   PostgresElasticIP:
     Description: Elastic IP for the Postgres EC2 instance
-    Value: !Ref PostgresElasticIP
+    Value: !GetAtt PostgresElasticIP.AllocationId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-postgres-elastic-ip'
   NginxElasticIP:
     Description: Elastic IP for the Nginx EC2 instance
-    Value: !Ref NginxElasticIP
+    Value: !GetAtt NginxElasticIP.AllocationId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-nginx-elastic-ip'
   UIElasticIP:
     Description: Elastic IP for the UI ECS service
-    Value: !Ref UIElasticIP
+    Value: !GetAtt UIElasticIP.AllocationId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-ui-elastic-ip'
   APIElasticIP:
     Description: Elastic IP for the API ECS service
-    Value: !Ref APIElasticIP
+    Value: !GetAtt APIElasticIP.AllocationId
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-elastic-ip'
   UIServiceNetworkLoadBalancer:
     Description: Network load balancer for the UI
-    Value: !Ref UIServiceNetworkLoadBalancer
+    Value: !GetAtt UIServiceNetworkLoadBalancer.Arn
     Export:
       Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
   APIServiceNetworkLoadBalancer:
     Description: Network load balancer for the API
-    Value: !Ref APIServiceNetworkLoadBalancer
+    Value: !GetAtt APIServiceNetworkLoadBalancer.Arn
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-nlb'

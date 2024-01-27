@@ -1,0 +1,82 @@
+# This doesn't work. Including for posterity and to show what I tried. Essentially, the circular dependency demonstrated here
+# means that the network stack can't be created because it needs the security group stack to be created, but the security group
+# stack can't be created because it needs the network stack to be created. We're going to use shell scripts instead and manually
+# create the stacks in the correct order and configure resources as needed. I don't love it but I learned something. Cheers.
+
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  AppName: 
+    Type: String
+    Description: Used to name resources.
+    Default: secure-note-manager
+  KeyPairName:
+    Type: String
+    Description: The name of the EC2 key pair to associate with resources.
+    Default: SNMKeypair
+  IngressCIDR:
+    Type: String
+    Description: The CIDR range for inbound access.
+    Default: 0.0.0.0/0
+  ProjectName:
+    Type: String
+    Description: Project name for cost allocation.
+    Default: SecureNoteManager
+  Environment:
+    Type: String
+    Description: Environment name for cost allocation.
+    Default: Development
+
+Resources:
+  SecurityGroupStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://snm-cloudformation-dev.s3.amazonaws.com/Config/securitygroups.yml
+      Parameters:
+        VpcId: 
+          Fn::GetAtt: 
+          - NetworkStack
+          - Outputs.VPCId
+        IngressCIDR: !Ref IngressCIDR
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+      Outputs:
+        - OutputKey: DatabaseSecurityGroup
+        - OutputKey: ReverseProxySecurityGroup
+        - OutputKey: APISecurityGroup
+        - OutputKey: UISecurityGroup
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  NetworkStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: https://snm-cloudformation-dev.s3.amazonaws.com/Config/network.yml
+      Parameters:
+        ProjectName: !Ref ProjectName
+        Environment: !Ref Environment
+        UISecurityGroup:
+          Fn::GetAtt: 
+          - SecurityGroupStack
+          - Outputs.UISecurityGroup
+        APISecurityGroup:
+          Fn::GetAtt: 
+          - SecurityGroupStack
+          - Outputs.APISecurityGroup
+      Outputs:
+        - OutputKey: VPCId
+        - OutputKey: ECSClusterSubnet
+        - OutputKey: UIServiceNetworkLoadBalancer
+        - OutputKey: APIServiceNetworkLoadBalancer
+        - OutputKey: PostgresElasticIP
+        - OutputKey: NginxElasticIP
+        - OutputKey: UIElasicIP
+        - OutputKey: APIElasticIP
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment

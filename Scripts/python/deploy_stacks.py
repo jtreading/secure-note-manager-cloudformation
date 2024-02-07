@@ -2,7 +2,7 @@ import boto3
 import json
 import os
 import json
-import subprocess
+import time
 import pprint
 
 def CreateStack(stack_name, template_file, parameters, aws_profile, aws_region, resource_locators):
@@ -63,8 +63,27 @@ def CreateSourceStack(config_data, resource_locators):
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
 
 def SyncRepository(github_repo_url, codecommit_repo_url):
-    subprocess.run(["git", "pull", github_repo_url, "main"])
-    subprocess.run(["git", "push", codecommit_repo_url, "main"])
+    # Clone GitHub repository
+    import subprocess
+    subprocess.run(["git", "clone", github_repo_url])
+
+    # Change directory to the cloned repository
+    import os
+    repo_name = os.path.basename(github_repo_url).split('.')[0]
+    os.chdir(repo_name)
+
+    # Push to CodeCommit repository
+    subprocess.run(["git", "push", codecommit_repo_url, "--all"])
+
+    # Navigate back to the parent directory
+    os.chdir('..')
+
+    # Delete the local repository TODO: FIX PERMISSIONS
+    try:
+        import shutil
+        shutil.rmtree(repo_name)
+    except:
+        print(f"Failed to delete the local repository: {repo_name}")
 
     print("GitHub to CodeCommit sync completed.")
 
@@ -178,6 +197,31 @@ def CreateUIBuildStack(config_data, resource_locators):
 
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
 
+def RunCodeBuildProject(codebuild_project_arn):
+    # Run CodeBuild project
+    client = boto3.client('codebuild')
+    response = client.start_build(projectName=codebuild_project_arn)
+    build_id = response['build']['id']
+    print(f"CodeBuild project {codebuild_project_arn} started. Build ID: {build_id}")
+
+    # Wait for build to complete (capped at five minutes)
+    print("Waiting for build to complete...")
+    counter = 0
+    while counter < 60:
+      time.sleep(5)
+      counter = counter + 1
+      theBuild = client.batch_get_builds(ids=[build_id])
+      buildStatus = theBuild['builds'][0]['buildStatus']
+
+      print(f"Build status: {buildStatus}")
+      if buildStatus == 'SUCCEEDED':
+        time_to_build = theBuild['builds'][0]['endTime'] - theBuild['builds'][0]['startTime']
+        time_to_build = time_to_build.total_seconds()
+        print(f"Build completed successfully in {time_to_build} seconds.")
+        break
+      elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
+        break
+
 def CreateStacks():
     # Read config.json file
     with open('config.json') as config_file:
@@ -204,6 +248,8 @@ def CreateStacks():
     resource_locators = CreateUIBuildStack(config_data, resource_locators)
 
     # Run Builds
+    RunCodeBuildProject(resource_locators.get(f'{app_name}-api-codebuild-project-arn'))
+    RunCodeBuildProject(resource_locators.get(f'{app_name}-ui-codebuild-project-arn'))
 
     # Create EC2 Server Stacks
 

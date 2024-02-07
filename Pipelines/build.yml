@@ -109,4 +109,4 @@ Outputs:
     Description: CodeBuild project ARN
     Value: !GetAtt CodeBuildProject.Arn
     Export:
-      Name: !Sub '${AppName}-${Environment}-codebuild-project-arn'
+      Name: !Sub '${AppName}-codebuild-project-arn'

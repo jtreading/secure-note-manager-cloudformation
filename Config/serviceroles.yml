@@ -26,6 +26,7 @@ Resources:
               Service: codebuild.amazonaws.com
             Action: sts:AssumeRole
       ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeCommitFullAccess
         - arn:aws:iam::aws:policy/AWSCodeBuildAdminAccess
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryFullAccess
       Policies:
@@ -59,9 +60,9 @@ Outputs:
     Description: CodeBuild service role ARN
     Value: !GetAtt CodeBuildServiceRole.Arn
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-codebuild-service-role-arn'
+      Name: !Sub '${AppName}-codebuild-service-role-arn'
   ECSTaskExecutionRole:
     Description: ECS task execution role ARN
     Value: !GetAtt ECSTaskExecutionRole.Arn
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ecs-task-execution-role-arn'
+      Name: !Sub '${AppName}-ecs-task-execution-role-arn'

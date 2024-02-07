@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
+  AppName:
+    Type: String
+    Description: Used to name resources.
   ProjectName:
     Type: String
     Description: Project name for cost allocation.
@@ -28,7 +31,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
         - Key: Name
-          Value: !Sub '${ProjectName}-${Environment}-vpc'
+          Value: !Sub '${AppName}-vpc'
 
   ECSClusterSubnetA:
     Type: 'AWS::EC2::Subnet'
@@ -206,64 +209,64 @@ Outputs:
     Description: VPC ID
     Value: !GetAtt MyVPC.VpcId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-vpc-id'
+      Name: !Sub '${AppName}-vpc-id'
   ECSClusterSubnetA:
     Description: Subnet ID for the ECS cluster
     Value: !GetAtt ECSClusterSubnetA.SubnetId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subneta-id'
+      Name: !Sub '${AppName}-ecs-cluster-subneta-id'
   ECSClusterSubnetB:
     Description: Subnet ID for the ECS cluster
     Value: !GetAtt ECSClusterSubnetA.SubnetId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ecs-cluster-subnetb-id'
+      Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
   PostgresElasticIP:
     Description: Elastic IP for the Postgres EC2 instance
     Value: !GetAtt PostgresElasticIP.AllocationId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-postgres-elastic-ip'
+      Name: !Sub '${AppName}-postgres-elastic-ip'
   NginxElasticIP:
     Description: Elastic IP for the Nginx EC2 instance
     Value: !GetAtt NginxElasticIP.AllocationId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-nginx-elastic-ip'
+      Name: !Sub '${AppName}-nginx-elastic-ip'
   UIElasticIP:
     Description: Elastic IP for the UI ECS service
     Value: !GetAtt UIElasticIP.AllocationId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ui-elastic-ip'
+      Name: !Sub '${AppName}-ui-elastic-ip'
   APIElasticIP:
     Description: Elastic IP for the API ECS service
     Value: !GetAtt APIElasticIP.AllocationId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-api-elastic-ip'
+      Name: !Sub '${AppName}-api-elastic-ip'
   UIServiceNetworkLoadBalancer:
     Description: Network load balancer for the UI
     Value: !Ref UIServiceNetworkLoadBalancer
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
+      Name: !Sub '${AppName}-ui-nlb'
   APIServiceNetworkLoadBalancer:
     Description: Network load balancer for the API
     Value: !Ref APIServiceNetworkLoadBalancer
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-api-nlb'
+      Name: !Sub '${AppName}-api-nlb'
   DatabaseSecurityGroup:
     Description: Security group ID for the PostgreSQL database
     Value: !GetAtt DatabaseSecurityGroup.GroupId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-database-security-group-id'
+      Name: !Sub '${AppName}-database-security-group-id'
   ReverseProxySecurityGroup:
     Description: Security group ID for the Nginx reverse proxy
     Value: !GetAtt ReverseProxySecurityGroup.GroupId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-reverse-proxy-security-group-id'
+      Name: !Sub '${AppName}-reverse-proxy-security-group-id'
   APISecurityGroup:
     Description: Security group ID for the API
     Value: !GetAtt APISecurityGroup.GroupId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-api-security-group-id'
+      Name: !Sub '${AppName}-api-security-group-id'
   UISecurityGroup:
     Description: Security group ID for the UI
     Value: !GetAtt UISecurityGroup.GroupId
     Export:
-      Name: !Sub '${ProjectName}-${Environment}-ui-security-group-id'
+      Name: !Sub '${AppName}-ui-security-group-id'

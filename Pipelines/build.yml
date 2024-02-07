@@ -1,19 +1,25 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  GitHubRepo:
-    Type: String
-    Description: GitHub repository name
-  AWSRegion:
-    Type: String
-    Description: AWS region for Amazon ECR
-  AWSAccountId:
-    Type: String
-    Description: AWS account ID
   AppName:
     Type: String
     Description: Used to name ECR and CodeBuild project.
-    Default: CFNCluster
+    Default: snm-demo
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development
+  AWSRegion:
+    Type: String
+    Description: AWS region
+    Default: us-east-1
+  CodeCommitRepo:
+    Type: String
+    Description: CodeCommit repository URL
   DockerHubUsername:
     Type: String
     Description: Docker Hub username
@@ -23,17 +29,12 @@ Parameters:
   CodeBuildServiceRole:
     Type: String
     Description: ARN of Code Build Service Role
-  ECRRepository:
+  ECRRepositoryName:
     Type: String
     Description: ECR repository name
-  ProjectName:
+  ECRRepositoryURL:
     Type: String
-    Description: The project name for cost allocation.
-    Default: SecureNotesManager
-  Environment:
-    Type: String
-    Description: The environment for cost allocation.
-    Default: Development
+    Description: ECR repository URL
 
 Resources:
   CodeBuildProject:
@@ -49,23 +50,23 @@ Resources:
         ComputeType: BUILD_GENERAL1_SMALL
         Image: aws/codebuild/amazonlinux2-x86_64-standard:4.0
         EnvironmentVariables:
-          - Name: GITHUB_REPO
-            Value: !Ref GitHubRepo
+          - Name: CODECOMMIT_REPO
+            Value: !Ref CodeCommitRepo
           - Name: DOCKER_IMAGE_NAME
             Value: !Ref AppName
-          - Name: AWS_REGION
-            Value: !Ref AWSRegion
-          - Name: AWS_ACCOUNT_ID
-            Value: !Ref AWSAccountId
-          - Name: ECR_REPOSITORY
-            Value: !Ref ECRRepository
+          - Name: ECR_REPOSITORY_NAME
+            Value: !Ref ECRRepositoryName
+          - Name: ECR_REPOSITORY_URL
+            Value: !Ref ECRRepositoryURL
           - Name: DOCKERHUB_USERNAME
             Value: !Ref DockerHubUsername
           - Name: DOCKERHUB_PASSWORD
             Value: !Ref DockerHubPassword
+          - Name: AWS_REGION
+            Value: !Ref AWSRegion
       Source:
-        Type: GITHUB
-        Location: !Ref GitHubRepo
+        Type: CODECOMMIT
+        Location: !Ref CodeCommitRepo
         BuildSpec: !Sub |
           version: 0.2
           phases:
@@ -74,18 +75,18 @@ Resources:
                 docker: 20
               commands:
                 - echo Setting up environment variables...
-                - export AWS_REGION=$AWS_REGION
-                - export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query 'Account' --output text)
-                - export ECR_REPOSITORY=$ECR_REPOSITORY
+                - export ECR_REPOSITORY_NAME=$ECR_REPOSITORY_NAME
+                - export ECR_REPOSITORY_URL=$ECR_REPOSITORY_URL
                 - export DOCKERHUB_USERNAME=$DOCKERHUB_USERNAME
                 - export DOCKERHUB_PASSWORD=$DOCKERHUB_PASSWORD
+                - export AWS_REGION=$AWS_REGION
             pre_build:
               commands:
                 - echo Logging in to Docker Hub...
                 - docker login -u $DOCKERHUB_USERNAME -p $DOCKERHUB_PASSWORD
               finally:
                 - echo Cleanup environment variables...
-                - unset AWS_REGION AWS_ACCOUNT_ID ECR_REPOSITORY DOCKERHUB_USERNAME DOCKERHUB_PASSWORD
+                - unset AWS_REGION AWS_ACCOUNT_ID ECR_REPOSITORY_NAME ECR_REPOSITORY_URL DOCKERHUB_USERNAME DOCKERHUB_PASSWORD AWS_REGION
             build:
               commands:
                 - echo Building Docker image...
@@ -93,12 +94,19 @@ Resources:
             post_build:
               commands:
                 - echo Pushing Docker image to Amazon ECR...
-                - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
-                - docker tag $DOCKER_IMAGE_NAME:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
-                - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest
+                - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $ECR_REPOSITORY_URL
+                - docker tag $DOCKER_IMAGE_NAME:latest $ECR_REPOSITORY_URL:latest
+                - docker push $ECR_REPOSITORY_URL:latest
       TimeoutInMinutes: 60
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+
+Outputs:
+  CodeBuildProjectARN:
+    Description: CodeBuild project ARN
+    Value: !GetAtt CodeBuildProject.Arn
+    Export:
+      Name: !Sub '${AppName}-${Environment}-codebuild-project-arn'

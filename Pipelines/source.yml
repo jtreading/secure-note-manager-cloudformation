@@ -65,7 +65,6 @@ Outputs:
     Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AppName}-api-repository
     Export:
       Name: !Sub ${AppName}-api-ecr-repository-url
-
   CodeCommitRepositoryURLUI:
     Description: CodeCommit repository URL
     Value: !GetAtt CodeCommitRepositoryUI.CloneUrlHttp

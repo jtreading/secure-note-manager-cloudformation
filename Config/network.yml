@@ -9,12 +9,10 @@ Parameters:
     Type: String
     Description: Environment name for cost allocation.
     Default: Dev
-  UISecurityGroup:
+  IngressCIDR:
     Type: String
-    Description: The ID of the security group for the UI.
-  APISecurityGroup:
-    Type: String
-    Description: The ID of the security group for the API.
+    Description: The CIDR range allowed to access the application.
+    Default: 0.0.0.0/0
 
 Resources:
   # NETWORKS
@@ -60,7 +58,7 @@ Resources:
   UIServiceNetworkLoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
+      Name: !Sub '${ProjectName}-ui-nlb'
       Scheme: internal
       Subnets:
         - !Ref ECSClusterSubnetA
@@ -76,13 +74,86 @@ Resources:
   APIServiceNetworkLoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
     Properties:
-      Name: !Sub '${ProjectName}-${Environment}-api-nlb'
+      Name: !Sub '${ProjectName}-api-nlb'
       Scheme: internal
       Subnets:
         - !Ref ECSClusterSubnetA
         - !Ref ECSClusterSubnetB
       SecurityGroups:
         - !Ref APISecurityGroup
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  # SECURITY GROUPS
+  DatabaseSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref MyVPC
+      GroupDescription: Security group for the PostgreSQL database
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !GetAtt APISecurityGroup.GroupId
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ReverseProxySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref MyVPC
+      GroupDescription: Security group for the Nginx reverse proxy
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: !Ref IngressCIDR
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: !Ref IngressCIDR
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  APISecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref MyVPC
+      GroupDescription: Security group for the API
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !GetAtt UISecurityGroup.GroupId
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !GetAtt ReverseProxySecurityGroup.GroupId
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  UISecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref MyVPC
+      GroupDescription: Security group for the UI
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          SourceSecurityGroupId: !GetAtt ReverseProxySecurityGroup.GroupId
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -168,11 +239,31 @@ Outputs:
       Name: !Sub '${ProjectName}-${Environment}-api-elastic-ip'
   UIServiceNetworkLoadBalancer:
     Description: Network load balancer for the UI
-    Value: !GetAtt UIServiceNetworkLoadBalancer.Arn
+    Value: !Ref UIServiceNetworkLoadBalancer
     Export:
       Name: !Sub '${ProjectName}-${Environment}-ui-nlb'
   APIServiceNetworkLoadBalancer:
     Description: Network load balancer for the API
-    Value: !GetAtt APIServiceNetworkLoadBalancer.Arn
+    Value: !Ref APIServiceNetworkLoadBalancer
     Export:
       Name: !Sub '${ProjectName}-${Environment}-api-nlb'
+  DatabaseSecurityGroup:
+    Description: Security group ID for the PostgreSQL database
+    Value: !GetAtt DatabaseSecurityGroup.GroupId
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-database-security-group-id'
+  ReverseProxySecurityGroup:
+    Description: Security group ID for the Nginx reverse proxy
+    Value: !GetAtt ReverseProxySecurityGroup.GroupId
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-reverse-proxy-security-group-id'
+  APISecurityGroup:
+    Description: Security group ID for the API
+    Value: !GetAtt APISecurityGroup.GroupId
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-api-security-group-id'
+  UISecurityGroup:
+    Description: Security group ID for the UI
+    Value: !GetAtt UISecurityGroup.GroupId
+    Export:
+      Name: !Sub '${ProjectName}-${Environment}-ui-security-group-id'

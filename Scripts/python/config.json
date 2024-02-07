@@ -1,0 +1,8 @@
+{
+    "AppName" : "snm-demo",
+    "ProjectName" : "SecureNoteManager",
+    "Environment" : "Development",
+    "IngressIP": "0.0.0.0",
+    "APIGitHubURL": "https://github.com/jtreading/secure-note-manager-api",
+    "UIGitHubURL": "https://github.com/jtreading/secure-note-manager-ui"
+}

@@ -1,6 +1,9 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
+  AppName: 
+    Type: String
+    Description: Used to name resources.
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -14,7 +17,7 @@ Resources:
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CodeBuildServiceRole
+      RoleName: !Sub '${AppName}-codebuild-service-role'
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -40,7 +43,7 @@ Resources:
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: ECSTaskExecutionRole
+      RoleName: !Sub '${AppName}-ecs-task-execution-role'
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:

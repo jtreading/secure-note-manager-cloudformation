@@ -49,12 +49,37 @@ def GetSecretByARN(secret_arn):
     secret_value = response['SecretString']
     return secret_value
 
+def PopulateCodeCommitRepository(github_repo_url, codecommit_repo_url):
+    # Clone GitHub repository
+    import subprocess
+    subprocess.run(["git", "clone", github_repo_url])
+
+    # Change directory to the cloned repository
+    import os
+    repo_name = os.path.basename(github_repo_url).split('.')[0]
+    os.chdir(repo_name)
+
+    # Push to CodeCommit repository
+    subprocess.run(["git", "push", codecommit_repo_url, "--all"])
+
+    # Navigate back to the parent directory
+    os.chdir('..')
+
+    # Delete the local repository
+    try:
+        import shutil
+        shutil.rmtree(repo_name)
+    except:
+        print(f"Failed to delete the local repository: {repo_name}")
+
+    print("GitHub to CodeCommit sync completed.")
+
 def CreateSecretsStack(config_data, resource_locators):
     # Configuration
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-secrets-stack"
-    TEMPLATE_FILE = "../../Config/secrets.yml"
+    TEMPLATE_FILE = "../Config/secrets.yml"
 
     # Parameters
     AppName = config_data.get('AppName')
@@ -82,7 +107,7 @@ def CreateSourceStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-source-stack"
-    TEMPLATE_FILE = "../../Pipelines/source.yml"
+    TEMPLATE_FILE = "../Pipelines/source.yml"
 
     # Parameters
     AppName = config_data.get('AppName')
@@ -97,37 +122,12 @@ def CreateSourceStack(config_data, resource_locators):
 
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
 
-def PopulateCodeCommitRepository(github_repo_url, codecommit_repo_url):
-    # Clone GitHub repository
-    import subprocess
-    subprocess.run(["git", "clone", github_repo_url])
-
-    # Change directory to the cloned repository
-    import os
-    repo_name = os.path.basename(github_repo_url).split('.')[0]
-    os.chdir(repo_name)
-
-    # Push to CodeCommit repository
-    subprocess.run(["git", "push", codecommit_repo_url, "--all"])
-
-    # Navigate back to the parent directory
-    os.chdir('..')
-
-    # Delete the local repository
-    try:
-        import shutil
-        shutil.rmtree(repo_name)
-    except:
-        print(f"Failed to delete the local repository: {repo_name}")
-
-    print("GitHub to CodeCommit sync completed.")
-
 def CreateNetworkStack(config_data, resource_locators):
     # Configuration
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-network-stack"
-    TEMPLATE_FILE = "../../Config/network.yml"
+    TEMPLATE_FILE = "../Config/network.yml"
 
     # Parameters
     AppName = config_data.get('AppName')
@@ -149,7 +149,7 @@ def CreateServiceRolesStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-service-role-stack"
-    TEMPLATE_FILE = "../../Config/serviceroles.yml"
+    TEMPLATE_FILE = "../Config/serviceroles.yml"
 
     # Parameters
     AppName = config_data.get('AppName')
@@ -169,7 +169,7 @@ def CreateAPIBuildStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-api-build-stack"
-    TEMPLATE_FILE = "../../Pipelines/build.yml"
+    TEMPLATE_FILE = "../Pipelines/build.yml"
 
     # Parameters
     AppName = f"{config_data.get('AppName')}-api"
@@ -207,7 +207,7 @@ def CreateUIBuildStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-ui-build-stack"
-    TEMPLATE_FILE = "../../Pipelines/build.yml"
+    TEMPLATE_FILE = "../Pipelines/build.yml"
 
     # Parameters
     AppName = f"{config_data.get('AppName')}-ui"
@@ -271,7 +271,7 @@ def CreateDatabaseStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-database-stack"
-    TEMPLATE_FILE = "../../Servers/postgres.yml"
+    TEMPLATE_FILE = "../Servers/postgres.yml"
 
     # Parameters
     AppName = config_data.get('AppName')

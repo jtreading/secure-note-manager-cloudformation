@@ -271,7 +271,7 @@ def CreateDatabaseStack(config_data, resource_locators):
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
     STACK_NAME = f"{config_data.get('AppName')}-database-stack"
-    TEMPLATE_FILE = "../Servers/postgres.yml"
+    TEMPLATE_FILE = "../EC2/postgres.yml"
 
     # Parameters
     AppName = config_data.get('AppName')

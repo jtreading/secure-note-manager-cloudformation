@@ -177,18 +177,13 @@ def CreateAPIBuildStack(config_data, resource_locators):
     ProjectName = config_data.get('ProjectName')
     Environment = config_data.get('Environment')
 
-    DockerSecretARN = resource_locators.get(f'{resource_locators.get('AppName')}-docker-secret-arn')
-
+    DockerSecretARN = resource_locators.get(f'{config_data.get('AppName')}-docker-secret-arn')
     secretvalue = GetSecretByARN(DockerSecretARN)
     secretvalue = json.loads(secretvalue)
     DockerHubUsername = secretvalue.get('username')
     DockerHubPassword = secretvalue.get('password')
-
-    print(secretvalue, DockerHubPassword, DockerHubUsername)
         
     CodeCommitRepo = resource_locators.get(f'{AppName}-cc-repository-url')
-    DockerHubUsername = input("Enter DockerHub username: ") # "johndoe"
-    DockerHubPassword = input("Enter DockerHub password: ") # "password"
     CodeBuildServiceRole = resource_locators.get(f'{config_data.get('AppName')}-codebuild-service-role-arn')
     ECRRepositoryURL = resource_locators.get(f'{AppName}-ecr-repository-url')
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
@@ -219,10 +214,14 @@ def CreateUIBuildStack(config_data, resource_locators):
     AppName = f"{config_data.get('AppName')}-ui"
     ProjectName = config_data.get('ProjectName')
     Environment = config_data.get('Environment')
+
+    DockerSecretARN = resource_locators.get(f'{config_data.get('AppName')}-docker-secret-arn')
+    secretvalue = GetSecretByARN(DockerSecretARN)
+    secretvalue = json.loads(secretvalue)
+    DockerHubUsername = secretvalue.get('username')
+    DockerHubPassword = secretvalue.get('password')
         
     CodeCommitRepo = resource_locators.get(f'{AppName}-cc-repository-url')
-    DockerHubUsername = input("Enter DockerHub username: ")
-    DockerHubPassword = input("Enter DockerHub password: ")
     CodeBuildServiceRole = resource_locators.get(f'{config_data.get('AppName')}-codebuild-service-role-arn')
     ECRRepositoryURL = resource_locators.get(f'{AppName}-ecr-repository-url')
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
@@ -279,10 +278,16 @@ def CreatePostgresStack(config_data, resource_locators):
     AppName = config_data.get('AppName')
     ProjectName = config_data.get('ProjectName')
     Environment = config_data.get('Environment')
+
+    DatabaseSecretARN = resource_locators.get(f'{config_data.get('AppName')}-database-secret-arn')
+    secretvalue = GetSecretByARN(DatabaseSecretARN)
+    secretvalue = json.loads(secretvalue)
+    DatabaseUsername = secretvalue.get('username')
+    DatabasePassword = secretvalue.get('password')
+
     DatabaseElasticIP = resource_locators.get(f'{AppName}-postgres-elastic-ip')
     AMI = config_data.get('DebianAMI')
     SecurityGroup = resource_locators.get(f'{AppName}-database-security-group-id')
-    print(SecurityGroup)
     KeypairName = config_data.get('KeypairName')
     SubnetId = resource_locators.get(f'{AppName}-postgres-subnet-id')
 
@@ -294,7 +299,9 @@ def CreatePostgresStack(config_data, resource_locators):
         {"ParameterKey": "AMI", "ParameterValue": AMI},
         {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup},
         {"ParameterKey": "KeypairName", "ParameterValue": KeypairName},
-        {"ParameterKey": "SubnetId", "ParameterValue": SubnetId}
+        {"ParameterKey": "SubnetId", "ParameterValue": SubnetId},
+        {"ParameterKey": "DatabaseUsername", "ParameterValue": DatabaseUsername},
+        {"ParameterKey": "DatabasePassword", "ParameterValue": DatabasePassword}
     ]
 
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)

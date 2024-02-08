@@ -31,6 +31,15 @@ Parameters:
   SubnetId:
     Type: String
     Description: The subnet to use for the instance.
+  DatabaseUsername:
+    Type: String
+    Description: The username for the database.
+    Default: webuser
+  DatabasePassword:
+    Type: String
+    Description: The password for the database.
+    Default: CHANGEME
+    NoEcho: true
 
 Resources:
   DatabaseInstance:
@@ -57,11 +66,11 @@ Resources:
           PGSQL_CONF="/etc/postgresql/15/main/postgresql.conf"
           echo "listen_addresses = '*'" | sudo tee -a $PGSQL_CONF
 
-          sudo -u postgres psql -c "CREATE USER webuser WITH PASSWORD 'CHANGEME';"
-          sudo -u postgres psql -c "CREATE DATABASE note OWNER webuser;"
-          sudo -u postgres psql -c "ALTER ROLE webuser CREATEDB;"
+          sudo -u postgres psql -c "CREATE USER ${DatabaseUsername} WITH PASSWORD '${DatabasePassword}';"
+          sudo -u postgres psql -c "CREATE DATABASE note OWNER ${DatabaseUsername};"
+          sudo -u postgres psql -c "ALTER ROLE ${DatabaseUsername} CREATEDB;"
           sudo -u postgres psql -d note -c "CREATE TABLE note (id SERIAL PRIMARY KEY, title TEXT, content TEXT);"
-          sudo -u postgres psql -d note -c "ALTER TABLE note OWNER TO webuser;"
+          sudo -u postgres psql -d note -c "ALTER TABLE note OWNER TO ${DatabaseUsername};"
           sudo systemctl restart postgresql
       Tags:
         - Key: ProjectName

@@ -33,6 +33,23 @@ Resources:
         - Key: Name
           Value: !Sub '${AppName}-vpc'
 
+  InternetGateWay:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+        - Key: Name
+          Value: !Sub '${AppName}-igw'
+
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref InternetGateWay
+
   ECSClusterSubnetA:
     Type: 'AWS::EC2::Subnet'
     Properties:

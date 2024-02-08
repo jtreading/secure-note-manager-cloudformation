@@ -4,6 +4,7 @@ import os
 import json
 import time
 import pprint
+import getpass
 
 def CreateStack(stack_name, template_file, parameters, aws_profile, aws_region, resource_locators):
     # Create the CloudFormation stack with parameters
@@ -43,11 +44,9 @@ def CreateStack(stack_name, template_file, parameters, aws_profile, aws_region, 
     return resource_locators
 
 def GetSecretByARN(secret_arn):
-    # Get the secret value by ARN
     client = boto3.client('secretsmanager')
     response = client.get_secret_value(SecretId=secret_arn)
     secret_value = response['SecretString']
-    print(f"Secret value: {secret_value}")
     return secret_value
 
 def CreateSecretsStack(config_data, resource_locators):
@@ -62,9 +61,9 @@ def CreateSecretsStack(config_data, resource_locators):
     ProjectName = config_data.get('ProjectName')
     Environment = config_data.get('Environment')
     DockerUsername = input("Enter DockerHub username: ")
-    DockerPassword = input("Enter DockerHub password: ")
+    DockerPassword = getpass.getpass("Enter DockerHub password: ")
     DatabaseUsername = input("Enter database username: ")
-    DatabasePassword = input("Enter database password: ")
+    DatabasePassword = getpass.getpass("Enter database password: ")
 
     PARAMETERS = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
@@ -267,11 +266,11 @@ def RunCodeBuildProject(codebuild_project_arn):
       elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
         break
 
-def CreatePostgresStack(config_data, resource_locators):
+def CreateDatabaseStack(config_data, resource_locators):
     # Configuration
     AWS_PROFILE = "default"
     AWS_REGION = "us-east-1"
-    STACK_NAME = f"{config_data.get('AppName')}-postgres-stack"
+    STACK_NAME = f"{config_data.get('AppName')}-database-stack"
     TEMPLATE_FILE = "../../Servers/postgres.yml"
 
     # Parameters
@@ -285,11 +284,11 @@ def CreatePostgresStack(config_data, resource_locators):
     DatabaseUsername = secretvalue.get('username')
     DatabasePassword = secretvalue.get('password')
 
-    DatabaseElasticIP = resource_locators.get(f'{AppName}-postgres-elastic-ip')
+    DatabaseElasticIP = resource_locators.get(f'{AppName}-database-elastic-ip')
     AMI = config_data.get('DebianAMI')
     SecurityGroup = resource_locators.get(f'{AppName}-database-security-group-id')
     KeypairName = config_data.get('KeypairName')
-    SubnetId = resource_locators.get(f'{AppName}-postgres-subnet-id')
+    SubnetId = resource_locators.get(f'{AppName}-database-subnet-id')
 
     PARAMETERS = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
@@ -307,18 +306,17 @@ def CreatePostgresStack(config_data, resource_locators):
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
 
 def CreateStacks():
-    # Read config.json file
+    # Set up configuration
     with open('config.json') as config_file:
         config_data = json.load(config_file)
-
     app_name = config_data.get('AppName')
-
-    # Create CodeCommit and ECR Repositories
     resource_locators = {}
-    resource_locators = CreateSourceStack(config_data, resource_locators)
 
     # Create Secrets Stack
     resource_locators = CreateSecretsStack(config_data, resource_locators)
+
+    # Create CodeCommit and ECR Repositories
+    resource_locators = CreateSourceStack(config_data, resource_locators)
 
     # Sync GitHub repositories to CodeCommit
     PopulateCodeCommitRepository(config_data.get('APIGitHubURL'), resource_locators.get(f'{app_name}-api-cc-repository-url'))
@@ -339,7 +337,7 @@ def CreateStacks():
     RunCodeBuildProject(resource_locators.get(f'{app_name}-ui-codebuild-project-arn'))
 
     # Create EC2 Server Stacks
-    resource_locators = CreatePostgresStack(config_data, resource_locators)
+    resource_locators = CreateDatabaseStack(config_data, resource_locators)
 
     # Create Fargate Stacks
 

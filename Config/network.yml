@@ -44,6 +44,12 @@ Resources:
         - Key: Name
           Value: !Sub '${AppName}-igw'
 
+  AttachGateway:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      VpcId: !Ref MyVPC
+      InternetGatewayId: !Ref InternetGateWay
+
   RouteTable:
     Type: 'AWS::EC2::RouteTable'
     Properties:
@@ -55,12 +61,30 @@ Resources:
       RouteTableId: !Ref RouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateWay
-
-  AttachGateway:
-    Type: 'AWS::EC2::VPCGatewayAttachment'
+  
+  ECSClusterSubnetARouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
     Properties:
-      VpcId: !Ref MyVPC
-      InternetGatewayId: !Ref InternetGateWay
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref ECSClusterSubnetA
+
+  ECSClusterSubnetBRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref ECSClusterSubnetB
+
+  DatabaseRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref DatabaseSubnet
+
+  ReverseProxyRouteTableAssociation:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      SubnetId: !Ref ReverseProxySubnet
 
   ECSClusterSubnetA:
     Type: 'AWS::EC2::Subnet'
@@ -86,7 +110,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  PostgresSubnet:
+  DatabaseSubnet:
     Type: 'AWS::EC2::Subnet'
     Properties:
       CidrBlock: 10.0.3.0/24
@@ -148,7 +172,7 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       VpcId: !Ref MyVPC
-      GroupDescription: Security group for the PostgreSQL database
+      GroupDescription: Security group for the database database
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 5432
@@ -217,7 +241,7 @@ Resources:
           Value: !Ref Environment
 
   # ELASTIC IPS
-  PostgresElasticIP:
+  DatabaseElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
       Domain: vpc
@@ -273,21 +297,21 @@ Outputs:
     Value: !GetAtt ECSClusterSubnetB.SubnetId
     Export:
       Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
-  PostgresSubnet:
-    Description: Subnet ID for the Postgres EC2 instance
-    Value: !GetAtt PostgresSubnet.SubnetId
+  DatabaseSubnet:
+    Description: Subnet ID for the database EC2 instance
+    Value: !GetAtt DatabaseSubnet.SubnetId
     Export:
-      Name: !Sub '${AppName}-postgres-subnet-id'
+      Name: !Sub '${AppName}-database-subnet-id'
   ReverseProxySubnet:
     Description: Subnet ID for the Nginx EC2 instance
     Value: !GetAtt ReverseProxySubnet.SubnetId
     Export:
       Name: !Sub '${AppName}-reverse-proxy-subnet-id'
-  PostgresElasticIP:
-    Description: Elastic IP for the Postgres EC2 instance
-    Value: !Ref PostgresElasticIP
+  DatabaseElasticIP:
+    Description: Elastic IP for the database EC2 instance
+    Value: !Ref DatabaseElasticIP
     Export:
-      Name: !Sub '${AppName}-postgres-elastic-ip'
+      Name: !Sub '${AppName}-database-elastic-ip'
   NginxElasticIP:
     Description: Elastic IP for the Nginx EC2 instance
     Value: !Ref NginxElasticIP
@@ -314,7 +338,7 @@ Outputs:
     Export:
       Name: !Sub '${AppName}-api-nlb'
   DatabaseSecurityGroup:
-    Description: Security group ID for the PostgreSQL database
+    Description: Security group ID for the database
     Value: !GetAtt DatabaseSecurityGroup.GroupId
     Export:
       Name: !Sub '${AppName}-database-security-group-id'

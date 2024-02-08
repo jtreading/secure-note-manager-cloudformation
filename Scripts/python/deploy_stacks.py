@@ -62,7 +62,7 @@ def CreateSourceStack(config_data, resource_locators):
 
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
 
-def SyncRepository(github_repo_url, codecommit_repo_url):
+def PopulateCodeCommitRepository(github_repo_url, codecommit_repo_url):
     # Clone GitHub repository
     import subprocess
     subprocess.run(["git", "clone", github_repo_url])
@@ -78,7 +78,7 @@ def SyncRepository(github_repo_url, codecommit_repo_url):
     # Navigate back to the parent directory
     os.chdir('..')
 
-    # Delete the local repository TODO: FIX PERMISSIONS
+    # Delete the local repository
     try:
         import shutil
         shutil.rmtree(repo_name)
@@ -202,7 +202,8 @@ def RunCodeBuildProject(codebuild_project_arn):
     client = boto3.client('codebuild')
     response = client.start_build(projectName=codebuild_project_arn)
     build_id = response['build']['id']
-    print(f"CodeBuild project {codebuild_project_arn} started. Build ID: {build_id}")
+    print(f"CodeBuild project {codebuild_project_arn.split('/')[-1]} started.")
+    print(f"Build ID: {build_id}")
 
     # Wait for build to complete (capped at five minutes)
     print("Waiting for build to complete...")
@@ -222,6 +223,32 @@ def RunCodeBuildProject(codebuild_project_arn):
       elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
         break
 
+def CreatePostgresStack(config_data, resource_locators):
+    # Configuration
+    AWS_PROFILE = "default"
+    AWS_REGION = "us-east-1"
+    STACK_NAME = f"{config_data.get('AppName')}-postgres-stack"
+    TEMPLATE_FILE = "../../Servers/postgres.yml"
+
+    # Parameters
+    AppName = config_data.get('AppName')
+    ProjectName = config_data.get('ProjectName')
+    Environment = config_data.get('Environment')
+    DatabaseElasticIP = resource_locators.get(f'{AppName}-postgres-elastic-ip')
+    AMI = config_data.get('DebianAMI')
+    SecurityGroup = resource_locators.get(f'{AppName}-database-security-group-id')
+
+    PARAMETERS = [
+        {"ParameterKey": "AppName", "ParameterValue": AppName},
+        {"ParameterKey": "ProjectName", "ParameterValue": ProjectName},
+        {"ParameterKey": "Environment", "ParameterValue": Environment},
+        {"ParameterKey": "DatabaseElasticIP", "ParameterValue": DatabaseElasticIP},
+        {"ParameterKey": "AMI", "ParameterValue": AMI},
+        {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup}
+    ]
+
+    return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
+
 def CreateStacks():
     # Read config.json file
     with open('config.json') as config_file:
@@ -234,8 +261,8 @@ def CreateStacks():
     resource_locators = CreateSourceStack(config_data, resource_locators)
 
     # Sync GitHub repositories to CodeCommit
-    SyncRepository(config_data.get('APIGitHubURL'), resource_locators.get(f'{app_name}-api-cc-repository-url'))
-    SyncRepository(config_data.get('UIGitHubURL'), resource_locators.get(f'{app_name}-ui-cc-repository-url'))
+    PopulateCodeCommitRepository(config_data.get('APIGitHubURL'), resource_locators.get(f'{app_name}-api-cc-repository-url'))
+    PopulateCodeCommitRepository(config_data.get('UIGitHubURL'), resource_locators.get(f'{app_name}-ui-cc-repository-url'))
 
     # Create Network Resources
     resource_locators = CreateNetworkStack(config_data, resource_locators)
@@ -252,6 +279,7 @@ def CreateStacks():
     RunCodeBuildProject(resource_locators.get(f'{app_name}-ui-codebuild-project-arn'))
 
     # Create EC2 Server Stacks
+    resource_locators = CreatePostgresStack(config_data, resource_locators)
 
     # Create Fargate Stacks
 

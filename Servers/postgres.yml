@@ -1,10 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
-  KeypairName:
+  AppName:
     Type: String
-    Description: The name of the EC2 key pair to associate with the instance.
-    Default: SNMKeypair
+    Description: Used to name resources.
+    Default: snm-demo
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  Environment:
+    Type: String
+    Description: The environment for cost allocation.
+    Default: Development
   DatabaseElasticIP:
     Type: String
     Description: The Elastic IP address for the database.
@@ -16,19 +24,12 @@ Parameters:
     Type: String
     Description: The security group to use for the instance.
     Default: sg-0a0a0a0a0a0a0a0a0
-  ProjectName:
-    Type: String
-    Description: The project name for cost allocation.
-    Default: SecureNotesManager
-  Environment:
-    Type: String
-    Description: The environment for cost allocation.
-    Default: Development
 
 Resources:
   DatabaseInstance:
     Type: 'AWS::EC2::Instance'
     Properties:
+      Name: !Sub "${AppName}-postgres-instance"
       ImageId: !Ref AMI
       InstanceType: t2.micro
       KeyName: !Ref KeypairName

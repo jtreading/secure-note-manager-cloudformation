@@ -1,9 +1,11 @@
 {
-    "AppName" : "snm-demo",
+    "AppName" : "snm-dev",
     "ProjectName" : "SecureNoteManager",
     "Environment" : "Development",
     "AWSRegion": "us-east-1",
     "IngressIP": "0.0.0.0",
     "APIGitHubURL": "https://github.com/jtreading/secure-note-manager-api",
-    "UIGitHubURL": "https://github.com/jtreading/secure-note-manager-ui"
+    "UIGitHubURL": "https://github.com/jtreading/secure-note-manager-ui",
+    "KeyPairName": "SNMKeypair",
+    "DebianAMI" : "ami-058bd2d568351da34"
 }

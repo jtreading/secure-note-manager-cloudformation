@@ -217,7 +217,7 @@ Outputs:
       Name: !Sub '${AppName}-ecs-cluster-subneta-id'
   ECSClusterSubnetB:
     Description: Subnet ID for the ECS cluster
-    Value: !GetAtt ECSClusterSubnetA.SubnetId
+    Value: !GetAtt ECSClusterSubnetB.SubnetId
     Export:
       Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
   PostgresElasticIP:

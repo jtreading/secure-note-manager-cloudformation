@@ -222,22 +222,22 @@ Outputs:
       Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
   PostgresElasticIP:
     Description: Elastic IP for the Postgres EC2 instance
-    Value: !GetAtt PostgresElasticIP.AllocationId
+    Value: !Ref PostgresElasticIP
     Export:
       Name: !Sub '${AppName}-postgres-elastic-ip'
   NginxElasticIP:
     Description: Elastic IP for the Nginx EC2 instance
-    Value: !GetAtt NginxElasticIP.AllocationId
+    Value: !Ref NginxElasticIP
     Export:
       Name: !Sub '${AppName}-nginx-elastic-ip'
   UIElasticIP:
     Description: Elastic IP for the UI ECS service
-    Value: !GetAtt UIElasticIP.AllocationId
+    Value: !Ref UIElasticIP
     Export:
       Name: !Sub '${AppName}-ui-elastic-ip'
   APIElasticIP:
     Description: Elastic IP for the API ECS service
-    Value: !GetAtt APIElasticIP.AllocationId
+    Value: !Ref APIElasticIP
     Export:
       Name: !Sub '${AppName}-api-elastic-ip'
   UIServiceNetworkLoadBalancer:

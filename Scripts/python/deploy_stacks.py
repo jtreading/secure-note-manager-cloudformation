@@ -237,6 +237,8 @@ def CreatePostgresStack(config_data, resource_locators):
     DatabaseElasticIP = resource_locators.get(f'{AppName}-postgres-elastic-ip')
     AMI = config_data.get('DebianAMI')
     SecurityGroup = resource_locators.get(f'{AppName}-database-security-group-id')
+    print(SecurityGroup)
+    KeypairName = config_data.get('KeypairName')
 
     PARAMETERS = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
@@ -244,7 +246,8 @@ def CreatePostgresStack(config_data, resource_locators):
         {"ParameterKey": "Environment", "ParameterValue": Environment},
         {"ParameterKey": "DatabaseElasticIP", "ParameterValue": DatabaseElasticIP},
         {"ParameterKey": "AMI", "ParameterValue": AMI},
-        {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup}
+        {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup},
+        {"ParameterKey": "KeypairName", "ParameterValue": KeypairName}
     ]
 
     return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)

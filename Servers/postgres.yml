@@ -13,6 +13,10 @@ Parameters:
     Type: String
     Description: The environment for cost allocation.
     Default: Development
+  KeypairName:
+    Type: String
+    Description: The name of the keypair to use for the instance.
+    Default: SNMKeyPair
   DatabaseElasticIP:
     Type: String
     Description: The Elastic IP address for the database.
@@ -29,7 +33,6 @@ Resources:
   DatabaseInstance:
     Type: 'AWS::EC2::Instance'
     Properties:
-      Name: !Sub "${AppName}-postgres-instance"
       ImageId: !Ref AMI
       InstanceType: t2.micro
       KeyName: !Ref KeypairName
@@ -62,8 +65,8 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  IPAssoc:
-  Type: AWS::EC2::EIPAssociation
-  Properties:
-    InstanceId: !Ref DatabaseInstance
-    EIP: !Ref DatabaseElasticIP
+  IPAssociation:
+    Type: 'AWS::EC2::EIPAssociation'
+    Properties:
+      InstanceId: !Ref DatabaseInstance
+      EIP: !Ref DatabaseElasticIP

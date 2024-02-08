@@ -28,6 +28,9 @@ Parameters:
     Type: String
     Description: The security group to use for the instance.
     Default: sg-0a0a0a0a0a0a0a0a0
+  SubnetId:
+    Type: String
+    Description: The subnet to use for the instance.
 
 Resources:
   DatabaseInstance:
@@ -36,8 +39,9 @@ Resources:
       ImageId: !Ref AMI
       InstanceType: t2.micro
       KeyName: !Ref KeypairName
-      SecurityGroups:
+      SecurityGroupIds:
         - !Ref SecurityGroup
+      SubnetId: !Ref SubnetId
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash

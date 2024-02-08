@@ -57,6 +57,30 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  PostgresSubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.3.0/24
+      VpcId: !Ref MyVPC
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  ReverseProxySubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      CidrBlock: 10.0.4.0/24
+      VpcId: !Ref MyVPC
+      AvailabilityZone: us-east-1a
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
   # NETWORK LOAD BALANCERS
   UIServiceNetworkLoadBalancer:
     Type: 'AWS::ElasticLoadBalancingV2::LoadBalancer'
@@ -220,6 +244,16 @@ Outputs:
     Value: !GetAtt ECSClusterSubnetB.SubnetId
     Export:
       Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
+  PostgresSubnet:
+    Description: Subnet ID for the Postgres EC2 instance
+    Value: !GetAtt PostgresSubnet.SubnetId
+    Export:
+      Name: !Sub '${AppName}-postgres-subnet-id'
+  ReverseProxySubnet:
+    Description: Subnet ID for the Nginx EC2 instance
+    Value: !GetAtt ReverseProxySubnet.SubnetId
+    Export:
+      Name: !Sub '${AppName}-reverse-proxy-subnet-id'
   PostgresElasticIP:
     Description: Elastic IP for the Postgres EC2 instance
     Value: !Ref PostgresElasticIP

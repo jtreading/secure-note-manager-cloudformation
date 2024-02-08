@@ -54,39 +54,32 @@ Resources:
           # Display Nginx version
           sudo nginx -v
 
-          # Create reverse_proxy configuration file
+          # Create NGINX configuration file
           echo 'server {
               listen 80;
-              server_name 3.87.247.171;
+              server_name ${UIElasticIP};
 
               location / {
-                  proxy_pass http://3.87.247.171:80;
+                  proxy_pass http://${UIElasticIP}:3000;
                   proxy_set_header Host $host;
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
-          }' | sudo tee /etc/nginx/sites-available/reverse_proxy.conf
+            }
 
-          # Create a symbolic link to enable the reverse_proxy configuration
-          sudo ln -s /etc/nginx/sites-available/reverse_proxy.conf /etc/nginx/sites-enabled/
-
-          # Disable the default configuration
-          sudo rm /etc/nginx/sites-enabled/default
-
-          # Create a nodeapp configuration in conf.d
-          echo 'server {
-              listen 80;
-              server_name 3.87.247.171;
+            server {
+              listen 5000;
+              server_name ${APIElasticIP};
 
               location / {
-                  proxy_pass http://3.87.247.171:80;
+                  proxy_pass http://${APIElasticIP}:5000;
                   proxy_set_header Host $host;
                   proxy_set_header X-Real-IP $remote_addr;
                   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                   proxy_set_header X-Forwarded-Proto $scheme;
               }
-          }' | sudo tee /etc/nginx/conf.d/nodeapp.conf
+            }' | sudo tee /etc/nginx/sites-available/default
 
           # Reload Nginx to apply changes
           sudo nginx -s reload
@@ -99,8 +92,8 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  IPAssoc:
-  Type: AWS::EC2::EIPAssociation
-  Properties:
-    InstanceId: !Ref ReverseProxyInstance
-    EIP: !Ref ReverseProxyElasticIP
+  IPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
+      InstanceId: !Ref ReverseProxyInstance
+      EIP: !Ref ReverseProxyElasticIP

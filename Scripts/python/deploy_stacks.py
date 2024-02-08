@@ -42,6 +42,42 @@ def CreateStack(stack_name, template_file, parameters, aws_profile, aws_region, 
 
     return resource_locators
 
+def GetSecretByARN(secret_arn):
+    # Get the secret value by ARN
+    client = boto3.client('secretsmanager')
+    response = client.get_secret_value(SecretId=secret_arn)
+    secret_value = response['SecretString']
+    print(f"Secret value: {secret_value}")
+    return secret_value
+
+def CreateSecretsStack(config_data, resource_locators):
+    # Configuration
+    AWS_PROFILE = "default"
+    AWS_REGION = "us-east-1"
+    STACK_NAME = f"{config_data.get('AppName')}-secrets-stack"
+    TEMPLATE_FILE = "../../Config/secrets.yml"
+
+    # Parameters
+    AppName = config_data.get('AppName')
+    ProjectName = config_data.get('ProjectName')
+    Environment = config_data.get('Environment')
+    DockerUsername = input("Enter DockerHub username: ")
+    DockerPassword = input("Enter DockerHub password: ")
+    DatabaseUsername = input("Enter database username: ")
+    DatabasePassword = input("Enter database password: ")
+
+    PARAMETERS = [
+        {"ParameterKey": "AppName", "ParameterValue": AppName},
+        {"ParameterKey": "ProjectName", "ParameterValue": ProjectName},
+        {"ParameterKey": "Environment", "ParameterValue": Environment},
+        {"ParameterKey": "DockerUsername", "ParameterValue": DockerUsername},
+        {"ParameterKey": "DockerPassword", "ParameterValue": DockerPassword},
+        {"ParameterKey": "DatabaseUsername", "ParameterValue": DatabaseUsername},
+        {"ParameterKey": "DatabasePassword", "ParameterValue": DatabasePassword}
+    ]
+
+    return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
+
 def CreateSourceStack(config_data, resource_locators):
     # Configuration
     AWS_PROFILE = "default"
@@ -140,10 +176,19 @@ def CreateAPIBuildStack(config_data, resource_locators):
     AppName = f"{config_data.get('AppName')}-api"
     ProjectName = config_data.get('ProjectName')
     Environment = config_data.get('Environment')
+
+    DockerSecretARN = resource_locators.get(f'{resource_locators.get('AppName')}-docker-secret-arn')
+
+    secretvalue = GetSecretByARN(DockerSecretARN)
+    secretvalue = json.loads(secretvalue)
+    DockerHubUsername = secretvalue.get('username')
+    DockerHubPassword = secretvalue.get('password')
+
+    print(secretvalue, DockerHubPassword, DockerHubUsername)
         
     CodeCommitRepo = resource_locators.get(f'{AppName}-cc-repository-url')
-    DockerHubUsername = input("Enter DockerHub username: ")
-    DockerHubPassword = input("Enter DockerHub password: ")
+    DockerHubUsername = input("Enter DockerHub username: ") # "johndoe"
+    DockerHubPassword = input("Enter DockerHub password: ") # "password"
     CodeBuildServiceRole = resource_locators.get(f'{config_data.get('AppName')}-codebuild-service-role-arn')
     ECRRepositoryURL = resource_locators.get(f'{AppName}-ecr-repository-url')
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
@@ -264,6 +309,9 @@ def CreateStacks():
     # Create CodeCommit and ECR Repositories
     resource_locators = {}
     resource_locators = CreateSourceStack(config_data, resource_locators)
+
+    # Create Secrets Stack
+    resource_locators = CreateSecretsStack(config_data, resource_locators)
 
     # Sync GitHub repositories to CodeCommit
     PopulateCodeCommitRepository(config_data.get('APIGitHubURL'), resource_locators.get(f'{app_name}-api-cc-repository-url'))

@@ -44,6 +44,18 @@ Resources:
         - Key: Name
           Value: !Sub '${AppName}-igw'
 
+  RouteTable:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref MyVPC
+
+  Route:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId: !Ref RouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateWay
+
   AttachGateway:
     Type: 'AWS::EC2::VPCGatewayAttachment'
     Properties:

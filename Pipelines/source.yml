@@ -4,73 +4,73 @@ Parameters:
   AppName: 
     Type: String
     Description: Used to name resources.
-  ProjectName:
-    Type: String
-    Description: Project name for cost allocation.
-    Default: SecureNotesManager
   Environment:
     Type: String
     Description: Environment name for cost allocation.
     Default: Development
+  ProjectName:
+    Type: String
+    Description: Project name for cost allocation.
+    Default: SecureNotesManager
 
 Resources:
-  CodeCommitRepositoryAPI:
+  APICodeCommitRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
       RepositoryName: !Sub ${AppName}-api-repository
       Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+        - Key: ProjectName
+          Value: !Ref ProjectName
 
-  ECRRepositoryAPI:
+  APIECRRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Sub ${AppName}-api-repository
       Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+        - Key: ProjectName
+          Value: !Ref ProjectName
 
-  CodeCommitRepositoryUI:
+  UICodeCommitRepository:
     Type: AWS::CodeCommit::Repository
     Properties:
       RepositoryName: !Sub ${AppName}-ui-repository
       Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+        - Key: ProjectName
+          Value: !Ref ProjectName
 
-  ECRRepositoryUI:
+  UIECRRepository:
     Type: AWS::ECR::Repository
     Properties:
       RepositoryName: !Sub ${AppName}-ui-repository
       Tags:
-        - Key: ProjectName
-          Value: !Ref ProjectName
         - Key: Environment
           Value: !Ref Environment
+        - Key: ProjectName
+          Value: !Ref ProjectName
 
 Outputs:
-  CodeCommitRepositoryURLAPI:
+  APICodeCommitRepositoryURL:
     Description: CodeCommit repository URL
-    Value: !GetAtt CodeCommitRepositoryAPI.CloneUrlHttp
+    Value: !GetAtt APICodeCommitRepository.CloneUrlHttp
     Export:
       Name: !Sub ${AppName}-api-cc-repository-url
-  ECRRepositoryURLAPI:
+  APIECRRepositoryURL:
     Description: ECR repository URL
     Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AppName}-api-repository
     Export:
       Name: !Sub ${AppName}-api-ecr-repository-url
-  CodeCommitRepositoryURLUI:
+  UICodeCommitRepositoryURL:
     Description: CodeCommit repository URL
-    Value: !GetAtt CodeCommitRepositoryUI.CloneUrlHttp
+    Value: !GetAtt UICodeCommitRepository.CloneUrlHttp
     Export:
       Name: !Sub ${AppName}-ui-cc-repository-url
-  ECRRepositoryURLUI:
+  UIECRRepositoryURL:
     Description: ECR repository URL
     Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${AppName}-ui-repository
     Export:

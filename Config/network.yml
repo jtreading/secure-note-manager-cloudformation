@@ -4,18 +4,18 @@ Parameters:
   AppName:
     Type: String
     Description: Used to name resources.
-  ProjectName:
-    Type: String
-    Description: Project name for cost allocation.
-    Default: SecureNoteManager
   Environment:
     Type: String
     Description: Environment name for cost allocation.
-    Default: Dev
+    Default: Development
   IngressCIDR:
     Type: String
     Description: The CIDR range allowed to access the application.
     Default: 0.0.0.0/0
+  ProjectName:
+    Type: String
+    Description: Project name for cost allocation.
+    Default: SecureNoteManager
 
 Resources:
   # NETWORKS
@@ -282,78 +282,78 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
-  VPCId:
-    Description: VPC ID
-    Value: !GetAtt MyVPC.VpcId
-    Export:
-      Name: !Sub '${AppName}-vpc-id'
-  ECSClusterSubnetA:
-    Description: Subnet ID for the ECS cluster
-    Value: !GetAtt ECSClusterSubnetA.SubnetId
-    Export:
-      Name: !Sub '${AppName}-ecs-cluster-subneta-id'
-  ECSClusterSubnetB:
-    Description: Subnet ID for the ECS cluster
-    Value: !GetAtt ECSClusterSubnetB.SubnetId
-    Export:
-      Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
-  DatabaseSubnet:
-    Description: Subnet ID for the database EC2 instance
-    Value: !GetAtt DatabaseSubnet.SubnetId
-    Export:
-      Name: !Sub '${AppName}-database-subnet-id'
-  ReverseProxySubnet:
-    Description: Subnet ID for the Nginx EC2 instance
-    Value: !GetAtt ReverseProxySubnet.SubnetId
-    Export:
-      Name: !Sub '${AppName}-reverse-proxy-subnet-id'
-  DatabaseElasticIP:
-    Description: Elastic IP for the database EC2 instance
-    Value: !Ref DatabaseElasticIP
-    Export:
-      Name: !Sub '${AppName}-database-elastic-ip'
-  NginxElasticIP:
-    Description: Elastic IP for the Nginx EC2 instance
-    Value: !Ref NginxElasticIP
-    Export:
-      Name: !Sub '${AppName}-nginx-elastic-ip'
-  UIElasticIP:
-    Description: Elastic IP for the UI ECS service
-    Value: !Ref UIElasticIP
-    Export:
-      Name: !Sub '${AppName}-ui-elastic-ip'
   APIElasticIP:
     Description: Elastic IP for the API ECS service
-    Value: !Ref APIElasticIP
     Export:
       Name: !Sub '${AppName}-api-elastic-ip'
-  UIServiceNetworkLoadBalancer:
-    Description: Network load balancer for the UI
-    Value: !Ref UIServiceNetworkLoadBalancer
-    Export:
-      Name: !Sub '${AppName}-ui-nlb'
+    Value: !Ref APIElasticIP
   APIServiceNetworkLoadBalancer:
     Description: Network load balancer for the API
-    Value: !Ref APIServiceNetworkLoadBalancer
     Export:
       Name: !Sub '${AppName}-api-nlb'
-  DatabaseSecurityGroup:
-    Description: Security group ID for the database
-    Value: !GetAtt DatabaseSecurityGroup.GroupId
-    Export:
-      Name: !Sub '${AppName}-database-security-group-id'
-  ReverseProxySecurityGroup:
-    Description: Security group ID for the Nginx reverse proxy
-    Value: !GetAtt ReverseProxySecurityGroup.GroupId
-    Export:
-      Name: !Sub '${AppName}-reverse-proxy-security-group-id'
+    Value: !Ref APIServiceNetworkLoadBalancer
   APISecurityGroup:
     Description: Security group ID for the API
-    Value: !GetAtt APISecurityGroup.GroupId
     Export:
       Name: !Sub '${AppName}-api-security-group-id'
+    Value: !GetAtt APISecurityGroup.GroupId
+  DatabaseElasticIP:
+    Description: Elastic IP for the database EC2 instance
+    Export:
+      Name: !Sub '${AppName}-database-elastic-ip'
+    Value: !Ref DatabaseElasticIP
+  DatabaseSecurityGroup:
+    Description: Security group ID for the database
+    Export:
+      Name: !Sub '${AppName}-database-security-group-id'
+    Value: !GetAtt DatabaseSecurityGroup.GroupId
+  DatabaseSubnet:
+    Description: Subnet ID for the database EC2 instance
+    Export:
+      Name: !Sub '${AppName}-database-subnet-id'
+    Value: !GetAtt DatabaseSubnet.SubnetId
+  ECSClusterSubnetA:
+    Description: Subnet ID for the ECS cluster
+    Export:
+      Name: !Sub '${AppName}-ecs-cluster-subneta-id'
+    Value: !GetAtt ECSClusterSubnetA.SubnetId
+  ECSClusterSubnetB:
+    Description: Subnet ID for the ECS cluster
+    Export:
+      Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
+    Value: !GetAtt ECSClusterSubnetB.SubnetId
+  NginxElasticIP:
+    Description: Elastic IP for the Nginx EC2 instance
+    Export:
+      Name: !Sub '${AppName}-nginx-elastic-ip'
+    Value: !Ref NginxElasticIP
+  ReverseProxySecurityGroup:
+    Description: Security group ID for the Nginx reverse proxy
+    Export:
+      Name: !Sub '${AppName}-reverse-proxy-security-group-id'
+    Value: !GetAtt ReverseProxySecurityGroup.GroupId
+  ReverseProxySubnet:
+    Description: Subnet ID for the Nginx EC2 instance
+    Export:
+      Name: !Sub '${AppName}-reverse-proxy-subnet-id'
+    Value: !GetAtt ReverseProxySubnet.SubnetId
   UISecurityGroup:
     Description: Security group ID for the UI
-    Value: !GetAtt UISecurityGroup.GroupId
     Export:
       Name: !Sub '${AppName}-ui-security-group-id'
+    Value: !GetAtt UISecurityGroup.GroupId
+  UIServiceNetworkLoadBalancer:
+    Description: Network load balancer for the UI
+    Export:
+      Name: !Sub '${AppName}-ui-nlb'
+    Value: !Ref UIServiceNetworkLoadBalancer
+  UIElasticIP:
+    Description: Elastic IP for the UI ECS service
+    Export:
+      Name: !Sub '${AppName}-ui-elastic-ip'
+    Value: !Ref UIElasticIP
+  VPCId:
+    Description: VPC ID
+    Export:
+      Name: !Sub '${AppName}-vpc-id'
+    Value: !GetAtt MyVPC.VpcId

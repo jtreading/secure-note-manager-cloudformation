@@ -4,14 +4,14 @@ Parameters:
   AppName: 
     Type: String
     Description: Used to name resources.
-  ProjectName:
-    Type: String
-    Description: The project name for cost allocation.
-    Default: SecureNoteManager
   Environment:
     Type: String
     Description: The environment for cost allocation.
     Default: Development
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNoteManager
 
 Resources:
   CodeBuildServiceRole:

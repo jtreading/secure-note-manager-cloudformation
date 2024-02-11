@@ -49,10 +49,20 @@ Parameters:
     Description: The ID of the VPC where the ECS cluster will be deployed.
 
 Resources:
-  ECSCluster:
+  APIECSCluster:
     Type: 'AWS::ECS::Cluster'
     Properties:
-      ClusterName: !Sub '${AppName}-cluster'
+      ClusterName: !Sub '${AppName}-api-cluster'
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  UIECSCluster:
+    Type: 'AWS::ECS::Cluster'
+    Properties:
+      ClusterName: !Sub '${AppName}-ui-cluster'
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -63,7 +73,7 @@ Resources:
     Type: 'AWS::ECS::Service'
     Properties:
       ServiceName: !Sub '${AppName}-service'
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref APIECSCluster
       DesiredCount: 1
       LaunchType: FARGATE
       NetworkConfiguration:
@@ -117,7 +127,7 @@ Resources:
     Type: 'AWS::ECS::Service'
     Properties:
       ServiceName: !Sub '${AppName}-service'
-      Cluster: !Ref ECSCluster
+      Cluster: !Ref UIECSCluster
       DesiredCount: 1
       LaunchType: FARGATE
       NetworkConfiguration:
@@ -168,18 +178,33 @@ Resources:
           Value: !Ref Environment
 
 Outputs:
-  ECSCluster:
+  APIECSCluster:
     Description: ECS Cluster ARN
-    Value: !GetAtt ECSCluster.Arn
+    Value: !GetAtt APIECSCluster.Arn
+    Export:
+      Name: !Sub '${AppName}-api-cluster-arn'
+  UIECSCluster:
+    Description: ECS Cluster ARN
+    Value: !GetAtt UIECSCluster.Arn
+    Export:
+      Name: !Sub '${AppName}-ui-cluster-arn'
   APIECSService:
     Description: API Service ARN
     Value: !Ref APIECSService
+    Export:
+      Name: !Sub '${AppName}-api-service-arn'
   APIECSTaskDefinition:
     Description: ECS Task Definition ARN
     Value: !Ref APIECSTaskDefinition
+    Export:
+      Name: !Sub '${AppName}-api-task-definition-arn'
   UIECSService:
     Description: UI Service ARN
     Value: !Ref UIECSService
+    Export:
+      Name: !Sub '${AppName}-ui-service-arn'
   UIECSTaskDefinition:
     Description: ECS Task Definition ARN
     Value: !Ref UIECSTaskDefinition
+    Export:
+      Name: !Sub '${AppName}-ui-task-definition-arn'

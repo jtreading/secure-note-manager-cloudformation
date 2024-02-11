@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: '2010-09-09'
 
 Parameters:
+  AppName:
+    Type: String
+    Description: Used to name resources.
+    Default: snm-demo
   IngressCIDR:
     Type: String
     Description: The CIDR range for inbound access. (Point to the Internet.)
@@ -26,6 +30,9 @@ Parameters:
     Type: String
     Description: The security group to use for the instance.
     Default: sg-0a0a0a0a0a0a0a0a0
+  SubnetId:
+    Type: String
+    Description: The subnet to use for the instance.
   ProjectName:
     Type: String
     Description: The project name for cost allocation.
@@ -44,6 +51,7 @@ Resources:
       KeyName: !Ref KeypairName
       SecurityGroupIds:
         - !Ref SecurityGroup
+      SubnetId: !Ref SubnetId
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash

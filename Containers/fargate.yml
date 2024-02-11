@@ -1,25 +1,21 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  VPCId:
-    Type: AWS::EC2::VPC::Id
-    Description: The ID of the VPC where the ECS cluster will be deployed.
-  ClusterSubnet:
-    Type: AWS::EC2::Subnet::Id
-    Description: The subnet where the ECS cluster will be deployed.
-  UIImageLocation:
+  APIElasticIP:
     Type: String
-    Description: The location of the UI Docker image to use in ECS.
-    Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+    Description: The Elastic IP address to use for the API.
   APIImageLocation:
     Type: String
     Description: The location of the API Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
-  UIElasticIP:
+  AppName:
     Type: String
-    Description: The Elastic IP address to use for the UI.
-  APIElasticIP:
-    Type: String
-    Description: The Elastic IP address to use for the API.
+    Description: Used to name the ECS cluster.
+  ClusterSubnetA:
+    Type: AWS::EC2::Subnet::Id
+    Description: The subnet where the ECS cluster will be deployed.
+  ClusterSubnetB:
+    Type: AWS::EC2::Subnet::Id
+    Description: The subnet where the ECS cluster will be deployed.
   DatabaseUrl:
     Type: String
     Description: The URL of the database to use in the application.
@@ -27,18 +23,24 @@ Parameters:
   ECSTaskExecutionRole:
     Type: String
     Description: The ARN of the ECS task execution role.
-  AppName:
-    Type: String
-    Description: Used to name the ECS cluster.
-    Default: CFNCluster
-  ProjectName:
-    Type: String
-    Description: The project name for cost allocation.
-    Default: SecureNotesManager
   Environment:
     Type: String
     Description: Environment name.
     Default: Development
+  ProjectName:
+    Type: String
+    Description: The project name for cost allocation.
+    Default: SecureNotesManager
+  UIImageLocation:
+    Type: String
+    Description: The location of the UI Docker image to use in ECS.
+    Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  UIElasticIP:
+    Type: String
+    Description: The Elastic IP address to use for the UI.
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: The ID of the VPC where the ECS cluster will be deployed.
 
 Resources:
   ECSCluster:
@@ -51,7 +53,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  ECSService:
+  APIECSService:
     Type: 'AWS::ECS::Service'
     Properties:
       ServiceName: !Sub '${AppName}-service'
@@ -64,8 +66,9 @@ Resources:
           SecurityGroups:
             - !GetAtt ClusterSecurityGroup.GroupId
           Subnets:
-            - !Ref ClusterSubnet
-      TaskDefinition: !Ref ECSTaskDefinition
+            - !Ref ClusterSubnetA
+              !Ref ClusterSubnetB
+      TaskDefinition: !Ref APIECSTaskDefinition
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -98,6 +101,28 @@ Resources:
         - FARGATE
       RuntimePlatform:
         OperatingSystemFamily: LINUX
+      Tags:
+        - Key: ProjectName
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: !Ref Environment
+
+  APIECSService:
+    Type: 'AWS::ECS::Service'
+    Properties:
+      ServiceName: !Sub '${AppName}-service'
+      Cluster: !Ref ECSCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+            - !GetAtt ClusterSecurityGroup.GroupId
+          Subnets:
+            - !Ref ClusterSubnetA
+              !Ref ClusterSubnetB
+      TaskDefinition: !Ref UIECSTaskDefinition
       Tags:
         - Key: ProjectName
           Value: !Ref ProjectName
@@ -140,9 +165,15 @@ Outputs:
   ECSCluster:
     Description: ECS Cluster ARN
     Value: !GetAtt ECSCluster.Arn
-  ECSTaskDefinition:
+  APIECSService:
+    Description: API Service ARN
+    Value: !Ref APIECSService
+  APIECSTaskDefinition:
     Description: ECS Task Definition ARN
-    Value: !Ref ECSTaskDefinition
-  ECSService:
-    Description: ECS Service ARN
-    Value: !GetAtt ECSService.Arn
+    Value: !Ref APIECSTaskDefinition
+  UIECSService:
+    Description: UI Service ARN
+    Value: !Ref UIECSService
+  UIECSTaskDefinition:
+    Description: ECS Task Definition ARN
+    Value: !Ref UIECSTaskDefinition

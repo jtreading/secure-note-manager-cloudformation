@@ -14,6 +14,7 @@
         "Source": "../Pipelines/source.yml",
         "Network": "../Config/network.yml",
         "ServiceRoles": "../Config/serviceroles.yml",
-        "Build": "../Pipelines/build.yml"
+        "Build": "../Pipelines/build.yml",
+        "Fargate": "../Containers/fargate.yml"
     }
 }

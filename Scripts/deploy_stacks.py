@@ -336,6 +336,58 @@ def CreateReverseProxyStack(ConfigData, ResourceLocators):
 
     return CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile)
 
+def CreateFargateStack(ConfigData, ResourceLocators):
+    # From Config
+    AppName = ConfigData.get('AppName')
+    AWSProfile = ConfigData.get('AWSProfile')
+    AWSRegion = ConfigData.get('AWSRegion')
+    Environment = ConfigData.get('Environment')
+    ProjectName = ConfigData.get('ProjectName')
+    StackName = f"{ConfigData.get('AppName')}-reverse-proxy-stack"
+    TemplateFile = ConfigData.get('TemplateFilePaths').get('Fargate')
+
+    # From Resource Locators
+    APIElasticIP = ResourceLocators.get(f'{AppName}-api-elastic-ip')
+    APIImageLocation = ResourceLocators.get(f'{AppName}-api-ecr-repository-url')
+    ClusterSubnetA = ResourceLocators.get(f'{AppName}-ecs-cluster-subneta-id')
+    ClusterSubnetB = ResourceLocators.get(f'{AppName}-ecs-cluster-subnetb-id')
+    ECSTaskExecutionRole = ResourceLocators.get(f'{AppName}-ecs-task-execution-role-arn')
+    ReverseProxyElasticIP = ResourceLocators.get(f'{AppName}-reverse-proxy-elastic-ip')
+    SecurityGroup = ResourceLocators.get(f'{AppName}-reverse-proxy-security-group-id')
+    SubnetId = ResourceLocators.get(f'{AppName}-reverse-proxy-subnet-id')
+    UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
+    UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
+    UIImageLocation = ResourceLocators.get(f'{AppName}-ui-ecr-repository-url')
+    VPCId = ResourceLocators.get(f'{AppName}-vpc-id')
+
+    # From Secrets Manager
+    DatabaseSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-database-secret-arn")
+    SecretValue = GetSecretByARN(DatabaseSecretARN)
+    SecretValue = json.loads(SecretValue)
+    DatabaseUsername = SecretValue.get('username')
+    DatabasePassword = SecretValue.get('password')
+    DatabaseURL = f"postgresql://{DatabaseUsername}:{DatabasePassword}@localhost:5432/note?schema=public"
+
+    Parameters = [
+        {"ParameterKey": "AppName", "ParameterValue": AppName},
+        {"ParameterKey": "ProjectName", "ParameterValue": ProjectName},
+        {"ParameterKey": "Environment", "ParameterValue": Environment},
+        {"ParameterKey": "APIElasticIP", "ParameterValue": APIElasticIP},
+        {"ParameterKey": "APIImageLocation", "ParameterValue": APIImageLocation},
+        {"ParameterKey": "ClusterSubnetA", "ParameterValue": ClusterSubnetA},
+        {"ParameterKey": "ClusterSubnetB", "ParameterValue": ClusterSubnetB},
+        {"ParameterKey": "ECSTaskExecutionRole", "ParameterValue": ECSTaskExecutionRole},
+        {"ParameterKey": "ReverseProxyElasticIP", "ParameterValue": ReverseProxyElasticIP},
+        {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup},
+        {"ParameterKey": "SubnetId", "ParameterValue": SubnetId},
+        {"ParameterKey": "UIElasticIP", "ParameterValue": UIElasticIP},
+        {"ParameterKey": "UIImageLocation", "ParameterValue": UIImageLocation},
+        {"ParameterKey": "VPCId", "ParameterValue": VPCId},
+        {"ParameterKey": "DatabaseURL", "ParameterValue": DatabaseURL}
+    ]
+
+    return CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile)
+
 def CreateStacks():
     # Set up configuration
     with open('config.json') as ConfigFile:
@@ -371,7 +423,8 @@ def CreateStacks():
     ResourceLocators = CreateDatabaseStack(ConfigData, ResourceLocators)
     ResourceLocators = CreateReverseProxyStack(ConfigData, ResourceLocators)
 
-    # Create Fargate Stacks
+    # Create Fargate Stack
+    ResourceLocators = CreateFargateStack(ConfigData, ResourceLocators)
 
     # Create Pipeline Stacks
 

@@ -74,6 +74,32 @@ def PopulateCodeCommitRepository(CodeCommitRepoUrl, GithubRepoURL):
 
     print("GitHub to CodeCommit sync completed.")
 
+def RunCodeBuildProject(CodebuildProjectARN):
+    # Run CodeBuild project
+    client = boto3.client('codebuild')
+    response = client.start_build(projectName=CodebuildProjectARN)
+    build_id = response['build']['id']
+    print(f"CodeBuild project {CodebuildProjectARN.split('/')[-1]} started.")
+    print(f"Build ID: {build_id}")
+
+    # Wait for build to complete (capped at five minutes)
+    print("Waiting for build to complete...")
+    counter = 0
+    while counter < 60:
+      time.sleep(5)
+      counter = counter + 1
+      theBuild = client.batch_get_builds(ids=[build_id])
+      buildStatus = theBuild['builds'][0]['buildStatus']
+
+      print(f"Build status: {buildStatus}")
+      if buildStatus == 'SUCCEEDED':
+        time_to_build = theBuild['builds'][0]['endTime'] - theBuild['builds'][0]['startTime']
+        time_to_build = time_to_build.total_seconds()
+        print(f"Build completed successfully in {time_to_build} seconds.")
+        break
+      elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
+        break
+
 def CreateSecretsStack(ConfigData, ResourceLocators):
     # From Config
     AppName = ConfigData.get('AppName')
@@ -86,8 +112,10 @@ def CreateSecretsStack(ConfigData, ResourceLocators):
 
     # From User Input
     DockerUsername = input("Enter DockerHub username: ")
+    # DockerPassword = input("Enter DockerHub password: ")
     DockerPassword = getpass.getpass("Enter DockerHub password: ")
     DatabaseUsername = input("Enter database username: ")
+    # DatabasePassword = input("Enter database password: ")
     DatabasePassword = getpass.getpass("Enter database password: ")
 
     Parameters = [
@@ -169,13 +197,13 @@ def CreateAPIBuildStack(ConfigData, ResourceLocators):
     TemplateFile = ConfigData.get('TemplateFilePaths').get('Build')
 
     # From Resource Locators
-    CodeBuildServiceRole = ResourceLocators.get(f'{ConfigData.get('AppName')}-codebuild-service-role-arn')
-    CodeCommitRepo = ResourceLocators.get(f'{AppName}-cc-repository-url')
-    ECRRepositoryURL = ResourceLocators.get(f'{AppName}-ecr-repository-url')
+    CodeBuildServiceRole = ResourceLocators.get(f"{ConfigData.get('AppName')}-codebuild-service-role-arn")
+    CodeCommitRepo = ResourceLocators.get(f"{AppName}-cc-repository-url")
+    ECRRepositoryURL = ResourceLocators.get(f"{AppName}-ecr-repository-url")
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
 
     # From Secrets Manager
-    DockerSecretARN = ResourceLocators.get(f'{ConfigData.get('AppName')}-docker-secret-arn')
+    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-docker-secret-arn")
     SecretValue = GetSecretByARN(DockerSecretARN)
     SecretValue = json.loads(SecretValue)
     DockerHubUsername = SecretValue.get('username')
@@ -196,34 +224,34 @@ def CreateAPIBuildStack(ConfigData, ResourceLocators):
 
     return CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile)
 
-def CreateUIBuildStack(config_data, resource_locators):
-    # Configuration
-    AWS_PROFILE = "default"
-    AWS_REGION = "us-east-1"
-    STACK_NAME = f"{config_data.get('AppName')}-ui-build-stack"
-    TEMPLATE_FILE = "../Pipelines/build.yml"
+def CreateUIBuildStack(ConfigData, ResourceLocators):
+    # From Config
+    AppName = f"{ConfigData.get('AppName')}-ui"
+    AWSProfile = ConfigData.get('AWSProfile')
+    AWSRegion = ConfigData.get('AWSRegion')
+    Environment = ConfigData.get('Environment')
+    ProjectName = ConfigData.get('ProjectName')
+    StackName = f"{ConfigData.get('AppName')}-ui-build-stack"
+    TemplateFile = ConfigData.get('TemplateFilePaths').get('Build')
 
-    # Parameters
-    AppName = f"{config_data.get('AppName')}-ui"
-    ProjectName = config_data.get('ProjectName')
-    Environment = config_data.get('Environment')
-
-    DockerSecretARN = resource_locators.get(f'{config_data.get('AppName')}-docker-secret-arn')
-    secretvalue = GetSecretByARN(DockerSecretARN)
-    secretvalue = json.loads(secretvalue)
-    DockerHubUsername = secretvalue.get('username')
-    DockerHubPassword = secretvalue.get('password')
-        
-    CodeCommitRepo = resource_locators.get(f'{AppName}-cc-repository-url')
-    CodeBuildServiceRole = resource_locators.get(f'{config_data.get('AppName')}-codebuild-service-role-arn')
-    ECRRepositoryURL = resource_locators.get(f'{AppName}-ecr-repository-url')
+    # From Resource Locators
+    CodeBuildServiceRole = ResourceLocators.get(f"{ConfigData.get('AppName')}-codebuild-service-role-arn")
+    CodeCommitRepo = ResourceLocators.get(f"{AppName}-cc-repository-url")
+    ECRRepositoryURL = ResourceLocators.get(f"{AppName}-ecr-repository-url")
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
 
-    PARAMETERS = [
+    # From Secrets Manager
+    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-docker-secret-arn")
+    SecretValue = GetSecretByARN(DockerSecretARN)
+    SecretValue = json.loads(SecretValue)
+    DockerHubUsername = SecretValue.get('username')
+    DockerHubPassword = SecretValue.get('password')
+
+    Parameters = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
         {"ParameterKey": "ProjectName", "ParameterValue": ProjectName},
         {"ParameterKey": "Environment", "ParameterValue": Environment},
-        {"ParameterKey": "AWSRegion", "ParameterValue": AWS_REGION},
+        {"ParameterKey": "AWSRegion", "ParameterValue": AWSRegion},
         {"ParameterKey": "CodeCommitRepo", "ParameterValue": CodeCommitRepo},
         {"ParameterKey": "DockerHubUsername", "ParameterValue": DockerHubUsername},
         {"ParameterKey": "DockerHubPassword", "ParameterValue": DockerHubPassword},
@@ -232,59 +260,33 @@ def CreateUIBuildStack(config_data, resource_locators):
         {"ParameterKey": "ECRRepositoryName", "ParameterValue": ECRRepositoryName}
     ]
 
-    return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
+    return CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile)
 
-def RunCodeBuildProject(codebuild_project_arn):
-    # Run CodeBuild project
-    client = boto3.client('codebuild')
-    response = client.start_build(projectName=codebuild_project_arn)
-    build_id = response['build']['id']
-    print(f"CodeBuild project {codebuild_project_arn.split('/')[-1]} started.")
-    print(f"Build ID: {build_id}")
+def CreateDatabaseStack(ConfigData, ResourceLocators):
+    # From Config
+    AMI = ConfigData.get('DebianAMI')
+    AppName = ConfigData.get('AppName')
+    AWSProfile = "default"
+    AWSRegion = "us-east-1"
+    Environment = ConfigData.get('Environment')
+    ProjectName = ConfigData.get('ProjectName')
+    StackName = f"{ConfigData.get('AppName')}-database-stack"
+    TemplateFile = "../EC2/postgres.yml"
 
-    # Wait for build to complete (capped at five minutes)
-    print("Waiting for build to complete...")
-    counter = 0
-    while counter < 60:
-      time.sleep(5)
-      counter = counter + 1
-      theBuild = client.batch_get_builds(ids=[build_id])
-      buildStatus = theBuild['builds'][0]['buildStatus']
+    # From Resource Locators
+    DatabaseElasticIP = ResourceLocators.get(f"{AppName}-database-elastic-ip")
+    KeypairName = ConfigData.get('KeypairName')
+    SecurityGroup = ResourceLocators.get(f"{AppName}-database-security-group-id")
+    SubnetId = ResourceLocators.get(f"{AppName}-database-subnet-id")
 
-      print(f"Build status: {buildStatus}")
-      if buildStatus == 'SUCCEEDED':
-        time_to_build = theBuild['builds'][0]['endTime'] - theBuild['builds'][0]['startTime']
-        time_to_build = time_to_build.total_seconds()
-        print(f"Build completed successfully in {time_to_build} seconds.")
-        break
-      elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
-        break
+    # From Secrets Manager
+    DatabaseSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-database-secret-arn")
+    SecretValue = GetSecretByARN(DatabaseSecretARN)
+    SecretValue = json.loads(SecretValue)
+    DatabaseUsername = SecretValue.get('username')
+    DatabasePassword = SecretValue.get('password')
 
-def CreateDatabaseStack(config_data, resource_locators):
-    # Configuration
-    AWS_PROFILE = "default"
-    AWS_REGION = "us-east-1"
-    STACK_NAME = f"{config_data.get('AppName')}-database-stack"
-    TEMPLATE_FILE = "../EC2/postgres.yml"
-
-    # Parameters
-    AppName = config_data.get('AppName')
-    ProjectName = config_data.get('ProjectName')
-    Environment = config_data.get('Environment')
-
-    DatabaseSecretARN = resource_locators.get(f'{config_data.get('AppName')}-database-secret-arn')
-    secretvalue = GetSecretByARN(DatabaseSecretARN)
-    secretvalue = json.loads(secretvalue)
-    DatabaseUsername = secretvalue.get('username')
-    DatabasePassword = secretvalue.get('password')
-
-    DatabaseElasticIP = resource_locators.get(f'{AppName}-database-elastic-ip')
-    AMI = config_data.get('DebianAMI')
-    SecurityGroup = resource_locators.get(f'{AppName}-database-security-group-id')
-    KeypairName = config_data.get('KeypairName')
-    SubnetId = resource_locators.get(f'{AppName}-database-subnet-id')
-
-    PARAMETERS = [
+    Parameters = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
         {"ParameterKey": "ProjectName", "ParameterValue": ProjectName},
         {"ParameterKey": "Environment", "ParameterValue": Environment},
@@ -297,7 +299,7 @@ def CreateDatabaseStack(config_data, resource_locators):
         {"ParameterKey": "DatabasePassword", "ParameterValue": DatabasePassword}
     ]
 
-    return CreateStack(STACK_NAME, TEMPLATE_FILE, PARAMETERS, AWS_PROFILE, AWS_REGION, resource_locators)
+    return CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile)
 
 def CreateReverseProxyStack(ConfigData, ResourceLocators):
     # From Config

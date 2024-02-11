@@ -251,7 +251,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
           
-  NginxElasticIP:
+  ReverseProxyElasticIP:
     Type: 'AWS::EC2::EIP'
     Properties:
       Domain: vpc
@@ -322,11 +322,11 @@ Outputs:
     Export:
       Name: !Sub '${AppName}-ecs-cluster-subnetb-id'
     Value: !GetAtt ECSClusterSubnetB.SubnetId
-  NginxElasticIP:
+  ReverseProxyElasticIP:
     Description: Elastic IP for the Nginx EC2 instance
     Export:
-      Name: !Sub '${AppName}-nginx-elastic-ip'
-    Value: !Ref NginxElasticIP
+      Name: !Sub '${AppName}-reverse-proxy-elastic-ip'
+    Value: !Ref ReverseProxyElasticIP
   ReverseProxySecurityGroup:
     Description: Security group ID for the Nginx reverse proxy
     Export:

@@ -111,11 +111,11 @@ def CreateSecretsStack(ConfigData, ResourceLocators):
 
     # From User Input
     DockerUsername = input("Enter DockerHub username: ")
-    # DockerPassword = input("Enter DockerHub password: ")
-    DockerPassword = getpass.getpass("Enter DockerHub password: ")
+    DockerPassword = input("Enter DockerHub password: ")
+    # DockerPassword = getpass.getpass("Enter DockerHub password: ")
     DatabaseUsername = input("Enter database username: ")
-    # DatabasePassword = input("Enter database password: ")
-    DatabasePassword = getpass.getpass("Enter database password: ")
+    DatabasePassword = input("Enter database password: ")
+    # DatabasePassword = getpass.getpass("Enter database password: ")
 
     Parameters = [
         {"ParameterKey": "AppName", "ParameterValue": AppName},
@@ -369,6 +369,7 @@ def CreateStacks():
 
     # Create EC2 Server Stacks
     ResourceLocators = CreateDatabaseStack(ConfigData, ResourceLocators)
+    ResourceLocators = CreateReverseProxyStack(ConfigData, ResourceLocators)
 
     # Create Fargate Stacks
 

@@ -343,21 +343,20 @@ def CreateFargateStack(ConfigData, ResourceLocators):
     AWSRegion = ConfigData.get('AWSRegion')
     Environment = ConfigData.get('Environment')
     ProjectName = ConfigData.get('ProjectName')
-    StackName = f"{ConfigData.get('AppName')}-reverse-proxy-stack"
+    StackName = f"{ConfigData.get('AppName')}-fargate-stack"
     TemplateFile = ConfigData.get('TemplateFilePaths').get('Fargate')
 
     # From Resource Locators
     APIElasticIP = ResourceLocators.get(f'{AppName}-api-elastic-ip')
     APIImageLocation = ResourceLocators.get(f'{AppName}-api-ecr-repository-url')
+    APISecurityGroup = ResourceLocators.get(f'{AppName}-api-security-group-id')
     ClusterSubnetA = ResourceLocators.get(f'{AppName}-ecs-cluster-subneta-id')
     ClusterSubnetB = ResourceLocators.get(f'{AppName}-ecs-cluster-subnetb-id')
     ECSTaskExecutionRole = ResourceLocators.get(f'{AppName}-ecs-task-execution-role-arn')
-    ReverseProxyElasticIP = ResourceLocators.get(f'{AppName}-reverse-proxy-elastic-ip')
-    SecurityGroup = ResourceLocators.get(f'{AppName}-reverse-proxy-security-group-id')
-    SubnetId = ResourceLocators.get(f'{AppName}-reverse-proxy-subnet-id')
     UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
     UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
     UIImageLocation = ResourceLocators.get(f'{AppName}-ui-ecr-repository-url')
+    UISecurityGroup = ResourceLocators.get(f'{AppName}-ui-security-group-id')
     VPCId = ResourceLocators.get(f'{AppName}-vpc-id')
 
     # From Secrets Manager
@@ -374,14 +373,13 @@ def CreateFargateStack(ConfigData, ResourceLocators):
         {"ParameterKey": "Environment", "ParameterValue": Environment},
         {"ParameterKey": "APIElasticIP", "ParameterValue": APIElasticIP},
         {"ParameterKey": "APIImageLocation", "ParameterValue": APIImageLocation},
+        {"ParameterKey": "APISecurityGroup", "ParameterValue": APISecurityGroup},
         {"ParameterKey": "ClusterSubnetA", "ParameterValue": ClusterSubnetA},
         {"ParameterKey": "ClusterSubnetB", "ParameterValue": ClusterSubnetB},
         {"ParameterKey": "ECSTaskExecutionRole", "ParameterValue": ECSTaskExecutionRole},
-        {"ParameterKey": "ReverseProxyElasticIP", "ParameterValue": ReverseProxyElasticIP},
-        {"ParameterKey": "SecurityGroup", "ParameterValue": SecurityGroup},
-        {"ParameterKey": "SubnetId", "ParameterValue": SubnetId},
         {"ParameterKey": "UIElasticIP", "ParameterValue": UIElasticIP},
         {"ParameterKey": "UIImageLocation", "ParameterValue": UIImageLocation},
+        {"ParameterKey": "UISecurityGroup", "ParameterValue": UISecurityGroup},
         {"ParameterKey": "VPCId", "ParameterValue": VPCId},
         {"ParameterKey": "DatabaseURL", "ParameterValue": DatabaseURL}
     ]

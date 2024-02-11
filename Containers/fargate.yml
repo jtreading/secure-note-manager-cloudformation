@@ -7,16 +7,19 @@ Parameters:
     Type: String
     Description: The location of the API Docker image to use in ECS.
     Default: 123456789012.dkr.ecr.region.amazonaws.com/image:tag
+  APISecurityGroup:
+    Type: String
+    Description: The security group to use for the API.
   AppName:
     Type: String
     Description: Used to name the ECS cluster.
   ClusterSubnetA:
-    Type: AWS::EC2::Subnet::Id
+    Type: String
     Description: The subnet where the ECS cluster will be deployed.
   ClusterSubnetB:
-    Type: AWS::EC2::Subnet::Id
+    Type: String
     Description: The subnet where the ECS cluster will be deployed.
-  DatabaseUrl:
+  DatabaseURL:
     Type: String
     Description: The URL of the database to use in the application.
     Default: postgresql://username:password@localhost:5432/databasename?schema=public
@@ -38,6 +41,9 @@ Parameters:
   UIElasticIP:
     Type: String
     Description: The Elastic IP address to use for the UI.
+  UISecurityGroup:
+    Type: String
+    Description: The security group to use for the UI.
   VPCId:
     Type: AWS::EC2::VPC::Id
     Description: The ID of the VPC where the ECS cluster will be deployed.
@@ -64,10 +70,10 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !GetAtt ClusterSecurityGroup.GroupId
+            - !Ref APISecurityGroup
           Subnets:
             - !Ref ClusterSubnetA
-              !Ref ClusterSubnetB
+            - !Ref ClusterSubnetB
       TaskDefinition: !Ref APIECSTaskDefinition
       Tags:
         - Key: ProjectName
@@ -86,7 +92,7 @@ Resources:
           Image: !Ref APIImageLocation
           Environment:
             - Name: DATABASE_URL
-              Value: !Ref DatabaseUrl
+              Value: !Ref DatabaseURL
           Name: !Sub '${AppName}-api-task'
           PortMappings:
             - ContainerPort: 5000
@@ -107,7 +113,7 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
-  APIECSService:
+  UIECSService:
     Type: 'AWS::ECS::Service'
     Properties:
       ServiceName: !Sub '${AppName}-service'
@@ -118,10 +124,10 @@ Resources:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
           SecurityGroups:
-            - !GetAtt ClusterSecurityGroup.GroupId
+            - !Ref UISecurityGroup
           Subnets:
             - !Ref ClusterSubnetA
-              !Ref ClusterSubnetB
+            - !Ref ClusterSubnetB
       TaskDefinition: !Ref UIECSTaskDefinition
       Tags:
         - Key: ProjectName

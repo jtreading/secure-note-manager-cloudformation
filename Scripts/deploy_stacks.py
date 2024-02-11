@@ -1,10 +1,9 @@
 import boto3
+import getpass
 import json
 import os
-import json
-import time
 import pprint
-import getpass
+import time
 
 def CreateStack(AWSProfile, AWSRegion, Parameters, ResourceLocators, StackName, TemplateFile):
     # Create the CloudFormation stack with parameters
@@ -49,7 +48,7 @@ def GetSecretByARN(SecretARN):
     secret_value = response['SecretString']
     return secret_value
 
-def PopulateCodeCommitRepository(CodeCommitRepoUrl, GithubRepoURL):
+def PopulateCodeCommitRepository(GithubRepoURL, CodeCommitRepoUrl):
     # Clone GitHub repository
     import subprocess
     subprocess.run(["git", "clone", GithubRepoURL])
@@ -203,7 +202,7 @@ def CreateAPIBuildStack(ConfigData, ResourceLocators):
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
 
     # From Secrets Manager
-    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-docker-secret-arn")
+    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-dockerhub-secret-arn")
     SecretValue = GetSecretByARN(DockerSecretARN)
     SecretValue = json.loads(SecretValue)
     DockerHubUsername = SecretValue.get('username')
@@ -241,7 +240,7 @@ def CreateUIBuildStack(ConfigData, ResourceLocators):
     ECRRepositoryName = ECRRepositoryURL.split("/")[-1]
 
     # From Secrets Manager
-    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-docker-secret-arn")
+    DockerSecretARN = ResourceLocators.get(f"{ConfigData.get('AppName')}-dockerhub-secret-arn")
     SecretValue = GetSecretByARN(DockerSecretARN)
     SecretValue = json.loads(SecretValue)
     DockerHubUsername = SecretValue.get('username')

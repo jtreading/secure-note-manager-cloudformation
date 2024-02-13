@@ -354,7 +354,6 @@ def CreateFargateStack(ConfigData, ResourceLocators):
     ClusterSubnetB = ResourceLocators.get(f'{AppName}-ecs-cluster-subnetb-id')
     ECSTaskExecutionRole = ResourceLocators.get(f'{AppName}-ecs-task-execution-role-arn')
     UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
-    UIElasticIP = ResourceLocators.get(f'{AppName}-ui-elastic-ip')
     UIImageLocation = ResourceLocators.get(f'{AppName}-ui-ecr-repository-url')
     UISecurityGroup = ResourceLocators.get(f'{AppName}-ui-security-group-id')
     VPCId = ResourceLocators.get(f'{AppName}-vpc-id')
